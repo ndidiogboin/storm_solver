@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Storm Simulation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .main { height: calc(100vh - 48px); align-items: stretch; gap: 0; }
+
+        /* ── LEFT PANEL ── */
+        .ss-left {
+            width: 28%;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+            height: 100%;
+            scrollbar-width: thin;
+            scrollbar-color: #4a5568 #1a202c;
+        }
+
+        .ss-left::-webkit-scrollbar { width: 5px; }
+        .ss-left::-webkit-scrollbar-thumb { background: #4a5568; border-radius: 3px; }
+
+        .ss-section {
+            padding: 14px 16px;
+            border-bottom: 1px solid #3d4e63;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .ss-label {
+            font-size: 11px;
+            font-weight: bold;
+            color: #a0aec0;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            margin: 0;
+        }
+
+        .ss-select {
+            width: 100%;
+            padding: 9px 12px;
+            background: #1a202c;
+            color: rgb(197, 198, 199);
+            border: 1px solid #4a5568;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .ss-select:focus { outline: none; border-color: #577bc7; }
+
+        /* ── INTENSITY MODE TOGGLE ── */
+        .mode-toggle {
+            display: flex;
+            background: #111827;
+            border: 1px solid #3d4e63;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .mode-toggle button {
+            flex: 1;
+            padding: 7px;
+            background: transparent;
+            color: #718096;
+            border: none;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+
+        .mode-toggle button.active {
+            background: #577bc7;
+            color: rgb(197, 198, 199);
+        }
+
+        /* ── CUSTOM INTENSITY INPUT ── */
+        .custom-intensity-input {
+            width: 100%;
+            padding: 9px 12px;
+            background: #1a202c;
+            color: rgb(197, 198, 199);
+            border: 1px solid #4a5568;
+            border-radius: 6px;
+            font-size: 13px;
+            box-sizing: border-box;
+        }
+
+        .custom-intensity-input:focus { outline: none; border-color: #577bc7; }
+
+        /* ── SLIDERS ── */
+        .slider-row {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .slider-val {
+            font-size: 12px;
+            font-weight: bold;
+            color: #63b3ed;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: #577bc7;
+        }
+
+        /* ── INTENSITY DISPLAY ── */
+        .intensity-box {
+            background: #111827;
+            border: 1px solid #3d4e63;
+            border-radius: 6px;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .intensity-val {
+            font-size: 22px;
+            font-weight: bold;
+            color: #63b3ed;
+        }
+
+        .intensity-label  { font-size: 11px; color: #718096; }
+        .intensity-depth  { font-size: 12px; color: #68d391; font-weight: bold; }
+
+        /* ── RUN BUTTON ── */
+        .run-btn {
+            width: 100%;
+            padding: 12px;
+            background: #2d3748;
+            color: #a0aec0;
+            border: 1px solid #3d4e63;
+            border-radius: 7px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .run-btn:hover { background: #4a6db5; }
+
+        .compare-btn {
+            width: 100%;
+            padding: 10px;
+            background: #2d3748;
+            color: #a0aec0;
+            border: 1px solid #3d4e63;
+            border-radius: 7px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .compare-btn:hover { background: #3d4e63; color: rgb(197, 198, 199); }
+
+        /* ── SUMMARY CARDS ── */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .sum-card {
+            background: #111827;
+            border: 1px solid #2d3748;
+            border-radius: 6px;
+            padding: 8px 10px;
+        }
+
+        .sum-card-label { font-size: 10px; color: #718096; text-transform: uppercase; letter-spacing: 0.05em; }
+        .sum-card-val   { font-size: 15px; font-weight: bold; color: #e2e8f0; margin-top: 2px; }
+        .sum-card-unit  { font-size: 10px; color: #4a5568; margin-left: 2px; }
+
+        /* ── RIGHT PANEL ── */
+        .ss-right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+            background: #1a202c;
+            border-radius: 10px;
+            margin: 12px 12px 12px 0;
+        }
+
+        /* ── CHART AREAS ── */
+        .chart-row-top {
+            display: flex;
+            height: 42%;
+            border-bottom: 1px solid #2d3748;
+            flex-shrink: 0;
+        }
+
+        .chart-row-bottom {
+            flex: 1;
+            min-height: 0;
+        }
+
+        .chart-pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 10px 14px;
+            overflow: hidden;
+        }
+
+        .chart-pane + .chart-pane { border-left: 1px solid #2d3748; }
+
+        .chart-pane-title {
+            font-size: 11px;
+            font-weight: bold;
+            color: #a0aec0;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 6px;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chart-pane canvas { flex: 1; min-height: 0; }
+
+        /* ── PLAYBACK BAR ── */
+        .playback-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 14px;
+            background: #111827;
+            border-top: 1px solid #2d3748;
+            flex-shrink: 0;
+        }
+
+        .play-btn {
+            padding: 5px 16px;
+            background: #577bc7;
+            color: rgb(197, 198, 199);
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .play-btn:hover { background: #8fa4ce; }
+
+        #stormSlider { flex: 1; accent-color: #577bc7; }
+        .time-label  { font-size: 11px; color: #a0aec0; min-width: 80px; }
+        .speed-label { font-size: 11px; color: #718096; }
+
+        #speedSelect {
+            background: #2d3748;
+            color: rgb(197, 198, 199);
+            border: 1px solid #4a5568;
+            border-radius: 5px;
+            padding: 3px 7px;
+            font-size: 11px;
+        }
+
+        .anim-badge {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: #1a3a1a;
+            color: #68d391;
+            border: 1px solid #2a5a2a;
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <button onclick="window.location.href='/rainfall_manager'" class="app-btn">Rainfall Manager</button>
+    <button onclick="window.location.href='/open/{{project}}'" class="app-btn">Hydrology</button>
+    <button onclick="printStormReport()" class="app-btn">Print Report</button>
+    <span style="font-size:13px; color:#718096;">Storm Solver — Storm Simulation</span>
+</div>
+
+<div class="main">
+    <button type="button" id="togglePanel" class="action-btn"></button>
+
+    <!-- ── LEFT PANEL ── -->
+    <div class="left ss-left">
+
+        <!-- CATCHMENT -->
+        <div class="ss-section">
+            <p class="ss-label">Catchment</p>
+            <select id="catchmentSelect" class="ss-select" onchange="onCatchmentChange()">
+                {% for c in data.catchments %}
+                <option value="{{ loop.index0 }}">
+                    {{ c.name }} — A={{ c.area }}m² Tc={{ c.tc }}min
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- INTENSITY SOURCE TOGGLE -->
+        <div class="ss-section">
+            <p class="ss-label">Rainfall Input</p>
+            <div class="mode-toggle">
+                <button id="btnIDF" class="active" onclick="setIntensityMode('idf')">IDF Lookup</button>
+                <button id="btnCustom" onclick="setIntensityMode('custom')">Custom Entry</button>
+            </div>
+
+            <!-- IDF MODE -->
+            <div id="idfPanel">
+                <select id="returnPeriod" class="ss-select" onchange="onParamChange()">
+                    <!-- populated by JS -->
+                </select>
+            </div>
+
+            <!-- CUSTOM MODE -->
+            <div id="customPanel" style="display:none;">
+                <input type="number" id="customIntensity" class="custom-intensity-input"
+                       placeholder="Enter intensity (mm/hr)" min="0" step="0.1"
+                       oninput="onCustomIntensity(this.value)">
+            </div>
+        </div>
+
+        <!-- TC SLIDER -->
+        <div class="ss-section">
+            <p class="ss-label">Time of Concentration</p>
+            <div class="slider-row">
+                <div class="slider-header">
+                    <span style="font-size:11px; color:#718096;">Override Tc (min)</span>
+                    <span class="slider-val" id="tcVal">—</span>
+                </div>
+                <input type="range" id="tcSlider" min="5" max="360" step="1"
+                       oninput="onTcSlider(this.value)">
+            </div>
+        </div>
+
+        <!-- C SLIDER -->
+        <div class="ss-section">
+            <p class="ss-label">Runoff Coefficient</p>
+            <div class="slider-row">
+                <div class="slider-header">
+                    <span style="font-size:11px; color:#718096;">C value</span>
+                    <span class="slider-val" id="cVal">—</span>
+                </div>
+                <input type="range" id="cSlider" min="0.1" max="1.0" step="0.01"
+                       oninput="onCSlider(this.value)">
+            </div>
+        </div>
+
+        <!-- LOCATION -->
+        <div class="ss-section">
+            <p class="ss-label">Storm Location</p>
+            <input type="text" id="stormLocation" class="custom-intensity-input"
+                   placeholder="Location e.g. Lagos Island, Nigeria">
+        </div>
+
+        <!-- INTENSITY DISPLAY -->
+        <div class="ss-section">
+            <p class="ss-label">Storm Parameters</p>
+            <div class="intensity-box">
+                <div class="intensity-val" id="intensityDisplay">—</div>
+                <div class="intensity-label" id="intensitySource">mm/hr from active IDF source</div>
+                <div class="intensity-depth" id="depthDisplay" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- RUN BUTTONS -->
+        <div class="ss-section">
+            <button class="run-btn" onclick="runStorm()">▶Run Storm</button>
+            <button class="compare-btn" onclick="runMultiStorm()">⇄ Multi-Storm Comparison</button>
+        </div>
+
+        <!-- SUMMARY -->
+        <div class="ss-section" id="summarySection" style="display:none;">
+            <p class="ss-label">Storm Summary</p>
+            <div class="summary-grid">
+                <div class="sum-card">
+                    <div class="sum-card-label">Peak Flow</div>
+                    <div class="sum-card-val">
+                        <span id="sumQp">—</span>
+                        <span class="sum-card-unit">m³/s</span>
+                    </div>
+                </div>
+                <div class="sum-card">
+                    <div class="sum-card-label">Tc</div>
+                    <div class="sum-card-val">
+                        <span id="sumTc">—</span>
+                        <span class="sum-card-unit">min</span>
+                    </div>
+                </div>
+                <div class="sum-card">
+                    <div class="sum-card-label">Intensity</div>
+                    <div class="sum-card-val">
+                        <span id="sumI">—</span>
+                        <span class="sum-card-unit">mm/hr</span>
+                    </div>
+                </div>
+                <div class="sum-card">
+                    <div class="sum-card-label">Rainfall Depth</div>
+                    <div class="sum-card-val">
+                        <span id="sumDepth">—</span>
+                        <span class="sum-card-unit">mm</span>
+                    </div>
+                </div>
+                <div class="sum-card">
+                    <div class="sum-card-label">Unit Qp</div>
+                    <div class="sum-card-val">
+                        <span id="sumUQp">—</span>
+                        <span class="sum-card-unit">m³/s</span>
+                    </div>
+                </div>
+                <div class="sum-card">
+                    <div class="sum-card-label">C</div>
+                    <div class="sum-card-val">
+                        <span id="sumC">—</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── RIGHT PANEL ── -->
+    <div class="right ss-right">
+
+        <div class="chart-row-top">
+
+            <div class="chart-pane">
+                <div class="chart-pane-title"><span>Rainfall Profile</span></div>
+                <canvas id="rainfallChart"></canvas>
+            </div>
+
+            <div class="chart-pane">
+                <div class="chart-pane-title">
+                    <span>Hydrograph</span>
+                    <span class="anim-badge" id="animBadge" style="display:none;">● Animating</span>
+                </div>
+                <canvas id="hydrographChart"></canvas>
+            </div>
+
+        </div>
+
+        <div class="chart-row-bottom" style="display:flex; border-top: 1px solid #2d3748;">
+
+            <div class="chart-pane">
+                <div class="chart-pane-title">Unit Hydrograph</div>
+                <canvas id="unitChart"></canvas>
+            </div>
+
+            <div class="chart-pane">
+                <div class="chart-pane-title">Multi-Storm Comparison</div>
+                <canvas id="multiChart"></canvas>
+            </div>
+
+        </div>
+
+        <div class="playback-bar">
+            <button class="play-btn" id="playBtn" onclick="togglePlay()">▶ Play</button>
+            <input type="range" id="stormSlider" min="0" value="0" step="1">
+            <span class="time-label" id="timeLabel">t = 0.00 min</span>
+            <span class="speed-label">Speed:</span>
+            <select id="speedSelect">
+                <option value="1">1×</option>
+                <option value="2" selected>2×</option>
+                <option value="4">4×</option>
+            </select>
+        </div>
+
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='vendor/chart.min.js') }}"></script>
+<script>
+    window.projectData = {{ data | tojson | safe }};
+</script>
+<script src="{{ url_for('static', filename='storm_simulation.js') }}"></script>
+<script>
+    document.getElementById("togglePanel").textContent = "⮜";
+
+    document.getElementById("togglePanel").onclick = function(){
+
+        document.querySelector(".left").classList.toggle("collapsed");
+
+        this.textContent =
+            document.querySelector(".left").classList.contains("collapsed")
+            ? "☰"
+            : "⮜";
+
+    };
+
+</script>
+
+</body>
+</html>

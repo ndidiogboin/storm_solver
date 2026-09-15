@@ -1,0 +1,3758 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <meta charset="utf-8">
+    <title>Reports - {{project}}</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+
+        /* =========================
+           REPORT PAGE OVERRIDES
+        ==========================*/
+
+        .main{
+            height:calc(100vh - 48px);
+            align-items:stretch;
+        }
+
+        .left.report-left{
+            width:20%;
+            overflow-y:auto;
+            overflow-x:hidden;
+            height:100%;
+            display:flex;
+            flex-direction:column;
+        }
+
+        .right.report-right{
+            flex:1;
+            overflow-y:auto;
+            overflow-x:hidden;
+            height:100%;
+            display:flex;
+            flex-direction:column;
+            gap:12px;
+        }
+
+        /* =========================
+           LEFT PANEL
+        ==========================*/
+
+        .hyd-page-title{
+            font-size:15px;
+            font-weight:bold;
+            color:#e2e8f0;
+            margin:0;
+            padding:16px 16px 0 16px;
+        }
+
+        .hyd-page-sub{
+            font-size:11px;
+            color:#718096;
+            padding:0 16px 14px 16px;
+            border-bottom:1px solid #3d4e63;
+        }
+
+        .hyd-section{
+            padding:14px 16px;
+            border-bottom:1px solid #3d4e63;
+        }
+
+        .hyd-title{
+            font-size:11px;
+            font-weight:bold;
+            color:#a0aec0;
+            text-transform:uppercase;
+            letter-spacing:.06em;
+            margin-bottom:10px;
+        }
+
+        .report-item{
+
+            padding:10px 12px;
+            margin-bottom:6px;
+            border-radius:6px;
+            cursor:pointer;
+            transition:.15s;
+            color:#d1d5db;
+
+        }
+
+        .report-item:hover{
+
+            background:#2d3748;
+
+        }
+
+        .report-item.active{
+
+            background:#2563eb;
+            color:white;
+            font-weight:bold;
+
+        }
+
+        
+        /* =========================
+           RIGHT PANEL
+        ==========================*/
+
+        .result-header{
+
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:10px;
+            flex-shrink:0;
+
+        }
+
+        .result-title{
+
+            margin:0;
+            font-size:15px;
+            color:#b4cadf;
+
+        }
+
+        .reort-page{
+            margin-top: 300px;
+            margin-left: 300px;
+            color:#8d8f91;
+
+        }
+
+        .result-actions{
+
+            display:flex;
+            gap:8px;
+
+        }
+
+        .action-btn{
+
+            border:none;
+            padding:9px 16px;
+            border-radius:6px;
+            cursor:pointer;
+            font-weight:bold;
+
+        }
+
+        .btn-print,
+        .btn-pdf{
+
+            background:#2d3748;
+            color:#cbd5e0;
+
+        }
+
+        /* =========================
+           REPORT CONTAINER
+        ==========================*/
+
+        #reportContainer{
+
+            flex:1;
+            overflow:auto;
+
+            background:#111827;
+
+            border:1px solid #2d3748;
+
+            border-radius:8px;
+
+            padding:16px;
+
+        }
+
+        table{
+
+            width:100%;
+            border-collapse:collapse;
+
+        }
+
+        thead{
+
+            position:sticky;
+            top:0;
+            z-index:2;
+
+        }
+
+        th{
+
+            background:#1f2937;
+
+            color:white;
+
+            padding:10px;
+
+            text-align:center;
+
+            border:1px solid #2d3748;
+
+            font-size:12px;
+
+        }
+
+        td{
+
+            padding:8px;
+
+            border:1px solid #2d3748;
+
+            text-align:center;
+
+            font-size:12px;
+
+            color:#e2e8f0;
+
+        }
+
+        tbody tr:nth-child(even){
+
+            background:#161f2d;
+
+        }
+
+        .report-table{
+            table-layout:auto !important;
+            width:max-content !important;
+            min-width:100% !important;
+        }
+
+        .report-table th,
+        .report-table td{
+            white-space:nowrap;
+        }
+
+        #reportContainer{
+            overflow-x:auto;
+            overflow-y:auto;
+        }
+
+        tbody tr:hover{
+
+            background:#23324b;
+
+        }
+
+        .pass{
+
+            color:#68d391;
+            font-weight:bold;
+
+        }
+
+        .fail{
+
+            color:#fc8181;
+            font-weight:bold;
+
+        }
+
+        .report-table{
+            width:100%;
+            border-collapse:collapse;
+            table-layout:fixed;
+        }
+
+        .report-table th:nth-child(1){
+            width:8%;
+        }
+
+        .report-table th:nth-child(2){
+            width:28%;
+        }
+
+        .report-table th:nth-child(3){
+            width:12%;
+        }
+
+        .report-table th:nth-child(4){
+            width:8%;
+        }
+
+        .report-table th:nth-child(5){
+            width:14%;
+        }
+
+        .report-table th:nth-child(6){
+            width:8%;
+        }
+
+        .report-table th:nth-child(7){
+            width:8%;
+        }
+
+        .report-table th:nth-child(8){
+            width:8%;
+        }
+
+        .report-table th:nth-child(9){
+            width:6%;
+        }
+
+        /* Small helper text under each radio option, matches hyd-page-sub tone */
+        .report-desc{
+            font-size:11px;
+            color:#718096;
+            line-height:1.5;
+            padding:10px 12px;
+            background:#1a202c;
+            border:1px solid #3d4e63;
+            border-radius:6px;
+           margin-top:2px;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+         .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #cbd5e0;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #3d4e63;
+            flex: 1;
+            transition: 0.15s;
+        }
+
+        .radio-label input[type="radio"] {
+            accent-color: #577bc7;
+            width: 14px;
+            height: 14px;
+            margin: 0;
+        }
+
+        .radio-label:hover {
+            background: #2d3748;
+            border-color: #577bc7;
+        }
+
+        .report-desc b{
+            color:#a0aec0;
+        }
+
+        /* Bordered box + checklist styling for the catchment picker,
+           reused from Hydraulic's #multiCatchList pattern */
+        #reportCatchList{
+            max-height:160px;
+            overflow-y:auto;
+            border:1px solid #3d4e63;
+            padding:6px;
+            border-radius:6px;
+            background:#1a202c;
+        }
+
+        #reportCatchList label{
+            display:flex;
+            align-items:center;
+            gap:4px;
+            padding:2px 0;
+            font-size:13px;
+            color:#cbd5e0;
+            cursor:pointer;
+        }
+
+        #reportCatchList input[type="checkbox"]{
+            margin:0;
+            width:14px;
+            height:14px;
+            accent-color:#577bc7;
+        }
+
+        .action-btn{
+            background: #2d3748;
+            color:#fff;
+            border:1px solid #3d4e63;;
+            border-radius:4px;
+            cursor:pointer;
+            padding:6px 10px;
+        }
+
+        .action-btn:hover{
+            background:#6e7b95;
+        }
+
+        .location-label{
+            display:inline-flex;
+            align-items:center;
+            gap:10px;
+            cursor:pointer;
+
+            font-size:13px;
+            color:#cbd5e0;
+
+            padding:8px 10px;
+
+            border:1px solid #3d4e63;
+            border-radius:6px;
+
+            width:fit-content;
+        }
+
+        .location-label input{
+            margin:0;
+            width:14px;
+            height:14px;
+            accent-color:#577bc7;
+        }
+
+        #projectLocation{
+            width:92%;
+
+            background:#1a202c;
+            color:#e2e8f0;
+
+            border:1px solid #3d4e63;
+            border-radius:6px;
+
+            padding:8px 10px;
+
+            font-size:13px;
+            outline:none;
+
+         transition:0.15s;
+        }
+
+        #projectLocation::placeholder{
+            color:#718096;
+        }
+
+        #projectLocation:focus{
+            border-color:#577bc7;
+            box-shadow:0 0 0 2px rgba(87,123,199,0.25);
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="topbar">
+
+    <a href="/open/{{project}}">
+        <button class="app-btn">Back</button>
+    </a>
+
+    <span style="font-size:13px;color:#718096;">
+
+        Storm Solver — Reports
+
+    </span>
+
+</div>
+
+
+<div class="main">
+    <button type="button" id="togglePanel" class="action-btn"></button>
+
+    <!-- ================= LEFT PANEL ================= -->
+
+    <div class="left report-left">
+
+        <div class="hyd-page-title">Reports</div>
+        <div class="hyd-page-sub">{{project}}</div>
+
+        <!-- REPORT TYPE -->
+        <div class="hyd-section">
+
+            <div class="hyd-title">Report Type</div>
+
+            <div class="radio-group">
+
+                <label class="radio-label">
+                    <input type="radio" name="report_type" value="master" checked>Hydraulic Design Master Sheet
+                </label>
+
+                <label class="radio-label">
+                    <input type="radio" name="report_type" value="hydrology">Hydrologic Analysis Master Sheet 
+                </label>
+
+                <label class="radio-label">
+                    <input type="radio" name="report_type" value="depth">Channels Depth Profile 
+                </label>
+
+                <label class="radio-label">
+                    <input type="radio" name="report_type" value="summary">Design Summary
+                </label>
+            </div>
+
+        </div>
+
+        <!-- LIVE DESCRIPTION (fills space, gives context, updates on selection) -->
+        <div class="hyd-section">
+            <div class="hyd-title">About This Report</div>
+            <div id="reportDesc" class="report-desc">
+                Combines every catchment's adopted channel section, velocity,
+                capacity and pass/fail status into a single design sheet.
+            </div>
+        </div>
+
+        <!-- CATCHMENTS -->
+        <div class="hyd-section">
+            <div class="hyd-title">Catchments</div>
+
+            <div class="radio-group">
+
+                <label class="radio-label">
+                    <input type="radio" name="catchment_mode" value="all" checked>All Catchments
+                </label>
+
+                <label class="radio-label">
+                    <input type="radio" name="catchment_mode" value="select">Select Catchments
+                </label>
+
+            </div>
+
+            <div id="reportCatchListBox" style="display:none; margin-top:8px;">
+                <div id="reportCatchList"></div>
+            </div>
+        </div>
+
+        <!-- PROJECT LOCATION -->
+        <div class="hyd-section">
+
+            <div class="hyd-title">Project Location</div>
+
+            <label class="location-label">
+                <input type="checkbox" id="includeLocation">
+                Include Location
+            </label>
+
+            <div id="locationBox" style="display:none; margin-top:8px;">
+
+                <input
+                    type="text"
+                    id="projectLocation"
+                    class="hyd-input"
+                    placeholder="Enter project location">
+
+            </div>
+
+        </div>
+
+        <!-- GENERATE (sibling section, last-child so it fills remaining space) -->
+        <div class="hyd-section">
+            <button onclick="generateReport()" class="action-btn">
+                Generate Report
+            </button>
+        </div>
+
+    </div>
+
+    <!-- ================= RIGHT PANEL ================= -->
+
+<div class="right report-right">
+
+    <div class="result-header">
+
+        <h3 class="result-title">
+
+            Analysis and Design Master Sheet
+
+        </h3>
+
+        <div class="result-actions">
+
+            <button class="action-btn" onclick="printReport()">Print</button>
+
+            <button class="action-btn" onclick="exportPDF()">
+
+                Export PDF
+
+            </button>
+
+        </div>
+
+    </div>
+
+    <div id="reportContainer">
+
+        <div class="empty-state">
+
+            <div class="empty-state-icon">
+
+              
+
+            </div>
+
+            <p class="reort-page">
+
+                Select a report type and click <b>Generate Report</b>
+
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ============================================================
+     3) ADD THIS SMALL SCRIPT (updates the description + wires
+        the initial toggle-panel icon + fixes Export PDF)
+     ============================================================ -->
+<script>
+// =============================
+// TOGGLE LEFT PANEL
+// =============================
+document.getElementById("togglePanel").onclick = function(){
+
+    document.querySelector(".left").classList.toggle("collapsed");
+
+    this.textContent =
+        document.querySelector(".left").classList.contains("collapsed")
+        ? "☰"
+        : "⮜";
+};
+
+
+const REPORT_DESCRIPTIONS = {
+    master: "Combines every catchment's adopted channel section, velocity, capacity and pass/fail status into a single design sheet.",
+    hydrology: "Lists elevation, length, slope, area, time of concentration and computed flow for every catchment in the project.",
+    depth: "Plots the adopted channel depth for each catchment in order, so you can see where depth increases or decreases along the project.",
+    summary: "A condensed, single-page overview of overall design status across the project. (Coming soon.)"
+};
+
+document.querySelectorAll('input[name="report_type"]').forEach(radio => {
+    radio.addEventListener("change", () => {
+        const desc = document.getElementById("reportDesc");
+        if (desc) desc.textContent = REPORT_DESCRIPTIONS[radio.value] || "";
+    });
+});
+
+// Set initial toggle icon so the button isn't blank on load
+document.getElementById("togglePanel").textContent = "⮜";
+
+// Show/hide the catchment checklist based on All vs Select
+document.querySelectorAll('input[name="catchment_mode"]').forEach(radio => {
+    radio.addEventListener("change", () => {
+        const listBox = document.getElementById("reportCatchListBox");
+        if (!listBox) return;
+        listBox.style.display = (radio.value === "select") ? "block" : "none";
+    });
+});
+
+// Populate the catchment checklist (unchecked by default)
+document.addEventListener("DOMContentLoaded", function(){
+    const listContainer = document.getElementById("reportCatchList");
+    if (!listContainer) return;
+
+    if (window.projectData?.catchments?.length > 0) {
+        window.projectData.catchments.forEach((c, i) => {
+            listContainer.innerHTML += `
+                <label>
+                    <input type="checkbox" class="reportCatchCheck" value="${i}">
+                    ${c.name} (Q=${c.q})
+                </label>
+            `;
+        });
+    } else {
+        listContainer.innerHTML = "No catchments available";
+    }
+});
+
+</script>
+
+<!-- PDF LIBRARIES -->
+<script src="{{ url_for('static', filename='vendor/jspdf.umd.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/jspdf.plugin.autotable.min.js') }}"></script>
+
+<!-- COVER PAGE -->
+<script src="{{ url_for('static', filename='titleblock.js') }}"></script>
+
+<script>
+
+const projectData = {{ data | tojson }};
+window.projectData = projectData;
+
+// This is the actual project folder name
+window.currentProject = "{{ project }}";
+
+// =============================
+// CATCHMENT SELECTION HELPER
+// =============================
+// Returns null when "All Catchments" is chosen (meaning: don't filter).
+// Returns an array of selected indices when "Select Catchments" is chosen.
+function getSelectedCatchmentIndices(){
+    const mode = document.querySelector('input[name="catchment_mode"]:checked')?.value;
+    if (mode !== "select") return null;
+
+    const checked = document.querySelectorAll(".reportCatchCheck:checked");
+    return Array.from(checked).map(cb => parseInt(cb.value, 10));
+}
+
+// =============================
+// HYDRAULIC MASTER SHEET
+// =============================
+function loadHydraulicMaster(){
+
+    const selected = getSelectedCatchmentIndices();
+
+    let rows = "";
+
+    projectData.catchments.forEach((c, i) => {
+
+        if (selected !== null && !selected.includes(i)) return;
+        if (!c.hydraulic_design) return;
+
+        const r = c.hydraulic_design.result;
+
+        rows += `
+
+        <tr>
+            <td>${i + 1}</td>
+
+            <td style="text-align:left;">${c.name}</td>
+
+            <td style="text-align:left;">${c.description || ""}</td>
+
+            <td>${c.chainage || ""}</td>
+
+            <td>${Number(c.length || 0).toFixed(2)}</td>
+
+            <td>${Number(c.q || 0).toFixed(4)}</td>
+
+            <td>
+
+                ${
+                    c.hydraulic_design.section === "rectangular"
+
+                    ? `${Number(r.b).toFixed(2)} m × ${Number(r.d).toFixed(2)} m`
+
+                    : `${Number(r.a).toFixed(2)} m (B) × ${Number(r.b).toFixed(2)} m (T) × ${Number(r.d).toFixed(2)} m (D)`
+
+                }
+
+            </td>
+
+            <td>${Number(r.V).toFixed(4)}</td>
+
+            <td>${Number(r.Qcap).toFixed(4)}</td>
+
+            <td>${r.slope_local != null ? Number(r.slope_local).toFixed(4) : "-"}</td>
+
+            <td>
+
+                ${
+                    r.ok
+                    ? '<span class="pass">PASS</span>'
+                    : '<span class="fail">FAIL</span>'
+                }
+
+            </td>
+
+        </tr>
+
+        `;
+
+    });
+
+    document.getElementById("reportContainer").innerHTML = `
+
+        <table class="report-table">
+
+            <thead>
+
+                <tr>
+                    <th>S/N</th>
+                    <th>Catchment</th>
+                    <th>Description</th>
+                    <th>Chainage</th>
+                    <th>Length (m)</th>
+                    <th>Flow (m³/s)</th>
+                    <th>Channel Size</th>
+                    <th>Velocity (m/s)</th>
+                    <th>Capacity (m³/s)</th>
+                    <th>Adopted Slope</th>
+                    <th>Status</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                ${rows}
+
+            </tbody>
+
+        </table>
+
+    `;
+
+}
+
+// =============================
+// HYDROLOGIC ANALYSIS SHEET
+// =============================
+function loadHydrologyReport(){
+
+    // -----------------------------
+    // Build report rows
+    // -----------------------------
+    const selected = getSelectedCatchmentIndices();
+
+    let rows = "";
+
+    projectData.catchments.forEach((c, i) => {
+
+        if (selected !== null && !selected.includes(i)) return;
+
+        const z1 = c.z_start;
+        const z2 = c.z_end;
+
+        const diff =
+            (z1 != null && z2 != null)
+                ? (z1 - z2).toFixed(2)
+                : "-";
+
+        rows += `
+
+        <tr>
+
+            <td>${i + 1}</td>
+
+            <td style="text-align:left;">${c.name}</td>
+
+            <td style="text-align:left;">${c.description || ""}</td>
+
+            <td>${z1 != null ? Number(z1).toFixed(2) : "-"}</td>
+
+            <td>${z2 != null ? Number(z2).toFixed(2) : "-"}</td>
+
+            <td>${diff}</td>
+
+            <td>${Number(c.length || 0).toFixed(2)}</td>
+
+            <td>${Number(c.slope_local || 0).toFixed(5)}</td>
+
+            <td>${Number(c.area || 0).toFixed(3)}</td>
+
+            <td>${Number(projectData.parameters.runoff_coefficient || 0).toFixed(2)}</td>
+
+            <td>${Number(c.tc || 0).toFixed(3)}</td>
+
+            <td>${Number(c.intensity || 0).toFixed(3)}</td>
+
+            <td>${Number(c.q_local || 0).toFixed(5)}</td>
+
+            <td>${Number(c.q || 0).toFixed(5)}</td>
+
+        </tr>
+
+        `;
+
+    });
+
+    // -----------------------------
+    // Render report
+    // -----------------------------
+    document.getElementById("reportContainer").innerHTML = `
+
+    <div style="overflow-x:auto;">
+
+        <table class="report-table">
+
+            <thead>
+
+                <tr>
+
+                    <th>S/N</th>
+                    <th>Catchment</th>
+                    <th>Description</th>
+                    <th>U-Elev. (m)</th>
+                    <th>L-Elev. (m)</th>
+                    <th>Diff. (m)</th>
+                    <th>Length (m)</th>
+                    <th>Slope</th>
+                    <th>Area (m²)</th>
+                    <th>Runoff C.</th>
+                    <th>Tc (Min)</th>
+                    <th>I (mm/hr)</th>
+                    <th>Flow (m³/s)</th>
+                    <th>∑ Flow (m³/s)</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                ${rows}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    `;
+
+}
+
+// =============================
+// DEPTH PROFILE
+// =============================
+function buildDepthProfileData(){
+
+    const selected = getSelectedCatchmentIndices();
+
+    const points = [];
+
+    projectData.catchments.forEach((c, i) => {
+        if (selected !== null && !selected.includes(i)) return;
+        if (!c.hydraulic_design) return;
+
+        const d = Number(c.hydraulic_design.result.d || 0);
+        points.push({
+            name: c.name,
+            description: c.description || "",
+            chainage: (c.chainage !== undefined && c.chainage !== null && c.chainage !== "") ? c.chainage : "-",
+            length: Number(c.length || 0),
+            depth: d
+        });
+    });
+
+    return points;
+}
+
+function buildDepthProfileSVG(points, opts = {}){
+
+    const width   = opts.width  || 700;
+    const height  = opts.height || 320;
+    const hasYLabel = !!opts.yAxisLabel;
+    const padL    = hasYLabel ? 68 : 50;
+    const padR = 20, padT = 20, padB = 170;
+    const plotW   = width  - padL - padR;
+    const plotH   = height - padT - padB;
+
+    const maxDepth = Math.max(...points.map(p => p.depth), 0.1);
+    const stepX = points.length > 1 ? plotW / (points.length - 1) : 0;
+
+    const bottomInset = plotH * 0.08;
+
+    const coords = points.map((p, i) => {
+        const x = padL + (points.length > 1 ? i * stepX : plotW / 2);
+        const y = padT + (p.depth / maxDepth) * (plotH - bottomInset);
+        return { x, y, ...p };
+    });
+
+    const linePath = coords.map((c, i) => `${i === 0 ? "M" : "L"} ${c.x.toFixed(1)} ${c.y.toFixed(1)}`).join(" ");
+
+    const gridLines = [0, 0.25, 0.5, 0.75, 1].map(f => {
+        const y = padT + f * (plotH - bottomInset);
+        const val = (maxDepth * f).toFixed(2);
+        return `
+            <line x1="${padL}" y1="${y}" x2="${width - padR}" y2="${y}" stroke="${opts.gridColor || '#2d3748'}" stroke-width="1"/>
+            <text x="${padL - 8}" y="${y + 4}" font-size="8" fill="${opts.axisColor || '#718096'}" text-anchor="end">${val}</text>
+        `;
+    }).join("");
+
+    const dots = coords.map(c => `
+        <circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="4" fill="${opts.lineColor || '#577bc7'}"/>
+        <text x="${c.x.toFixed(1)}" y="${(c.y - 10).toFixed(1)}" font-size="8" fill="${opts.textColor || '#cbd5e0'}" text-anchor="middle">${c.depth.toFixed(2)}m</text>
+    `).join("");
+
+    // Vertical labels, anchored directly below each point's x-position
+    // (text-anchor="end" + rotate(-90) makes the label read top-to-bottom,
+    // starting right at the axis and extending straight down from the dot)
+    const labels = coords.map(c => {
+
+        const x = c.x.toFixed(1);
+        const y = (height - padB + 8).toFixed(1);
+
+        return `
+            <text x="${x}"
+                  y="${y}"
+                  font-size="8"
+                  fill="${opts.axisColor || '#718096'}"
+                  text-anchor="end"
+                  transform="rotate(-90 ${x} ${y})">
+
+                <tspan x="${x}" dy="0">
+                    ${c.name}
+                </tspan>
+
+                <tspan x="${x}" dy="10">
+                    CH ${c.chainage} | L = ${Number(c.length || 0).toFixed(2)}m
+                </tspan>
+
+            </text>
+        `;
+
+    }).join("");
+
+    const yAxisTitle = hasYLabel ? `
+        <text x="16" y="${padT + plotH / 2}" font-size="9" font-weight="bold" fill="${opts.axisColor || '#718096'}"
+              text-anchor="middle" transform="rotate(-90 16 ${padT + plotH / 2})">${opts.yAxisLabel}</text>
+    ` : "";
+
+    return `
+        <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet"
+            style="width:100%; height:auto; display:block;">
+            ${gridLines}
+            <path d="${linePath}" fill="none" stroke="${opts.lineColor || '#577bc7'}" stroke-width="2"/>
+            ${dots}
+            ${labels}
+            ${yAxisTitle}
+            <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="${opts.axisColor || '#718096'}"/>
+            <line x1="${padL}" y1="${padT + plotH}" x2="${width - padR}" y2="${padT + plotH}" stroke="${opts.axisColor || '#718096'}"/>
+        </svg>
+    `;
+}
+
+async function svgToDataURL(svgText, scale = 6){
+
+    return await new Promise((resolve, reject)=>{
+
+        const svgBase64 = btoa(unescape(encodeURIComponent(svgText)));
+        const dataURI = "data:image/svg+xml;base64," + svgBase64;
+
+        const img = new Image();
+
+        img.onerror = function(err){
+            console.error("svgToDataURL: image failed to load", err);
+            reject(new Error("Chart image failed to render (svgToDataURL)"));
+        };
+
+        img.onload = function(){
+
+            const canvas = document.createElement("canvas");
+
+            canvas.width  = img.width  * scale;
+            canvas.height = img.height * scale;
+
+            const ctx = canvas.getContext("2d");
+
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.scale(scale, scale);
+            ctx.drawImage(img, 0, 0);
+
+            resolve(
+                canvas.toDataURL("image/png")
+            );
+
+        };
+
+        img.src = dataURI;
+
+    });
+
+}
+
+function loadDepthProfile(){
+
+    const points = buildDepthProfileData();
+
+    if (!points.length){
+        document.getElementById("reportContainer").innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📉</div>
+                <p>No hydraulic designs found for the current catchment selection</p>
+            </div>
+        `;
+        return;
+    }
+
+    const chart = buildDepthProfileSVG(points);
+
+    const rows = points.map((p, i) => `
+        <tr>
+            <td>${i + 1}</td>
+            <td style="text-align:left;">${p.name}</td>
+            <td style="text-align:left;">${p.description}</td>
+            <td>${p.chainage}</td>
+            <td>${Number(p.length || 0).toFixed(2)}</td>
+            <td>${p.depth.toFixed(2)}</td>
+        </tr>
+    `).join("");
+
+    document.getElementById("reportContainer").innerHTML = `
+        <div style="width:100%; padding:16px 0;">
+            ${chart}
+        </div>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>S/N</th>
+                    <th>Catchment</th>
+                    <th>Description</th>
+                    <th>Chainage</th>
+                    <th>Length (m)</th>
+                    <th>Adopted Depth (m)</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${rows}
+            </tbody>
+        </table>
+    `;
+}
+
+// =============================
+// DESIGN SUMMARY
+// =============================
+function loadDesignSummary(){
+
+    const selected = getSelectedCatchmentIndices();
+
+    const includeLocation =
+        document.getElementById("includeLocation").checked;
+
+    const location =
+        includeLocation
+            ? document.getElementById("projectLocation").value.trim()
+            : "-";
+
+    let rows = "";
+
+    let sn = 1;
+
+    projectData.catchments.forEach((c, i) => {
+
+        if (selected !== null && !selected.includes(i)) return;
+        if (!c.hydraulic_design) return;
+
+        const r = c.hydraulic_design.result;
+
+        let channelSize = "";
+
+        if (c.hydraulic_design.section === "rectangular"){
+
+            if (Number(r.b).toFixed(3) === Number(r.d).toFixed(3)){
+
+                channelSize =
+                    `${Number(r.b).toFixed(2)}m(W) × ${Number(r.d).toFixed(2)}m(D)`;
+
+            }else{
+
+                channelSize =
+                    `${Number(r.b).toFixed(2)}m(W) × ${Number(r.d).toFixed(2)}m(D)`;
+
+            }
+
+        }else{
+
+            channelSize =
+                `${Number(r.a).toFixed(2)}m(B) × ${Number(r.b).toFixed(2)}m(T) × ${Number(r.d).toFixed(2)}m(D)`;
+
+        }
+
+        rows += `
+        <tr>
+
+            <td>${sn++}</td>
+
+            <td style="text-align:left;">${location}</td>
+
+            <td style="text-align:left;">${c.name}</td>
+
+            <td>${c.chainage || "-"}</td>
+
+            <td>${Number(c.length || 0).toFixed(2)}</td>
+
+            <td>${channelSize}</td>
+
+        </tr>
+        `;
+
+    });
+
+    document.getElementById("reportContainer").innerHTML = `
+
+        <table class="report-table">
+
+            <thead>
+
+                <tr>
+
+                    <th>S/N</th>
+                    <th>Location</th>
+                    <th>Catchment</th>
+                    <th>Chainage Interval</th>
+                    <th>Length (m)</th>
+                    <th>Channel Sizes</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                ${rows}
+
+            </tbody>
+
+        </table>
+
+    `;
+
+}
+
+// =============================
+// GENERATE REPORT
+// =============================
+function generateReport(){
+
+    console.log("Generate Report clicked");
+
+    const report =
+        document.querySelector('input[name="report_type"]:checked').value;
+
+    console.log(report);
+
+    const selected = getSelectedCatchmentIndices();
+    if (selected !== null && selected.length === 0) {
+        alert("Please select at least one catchment, or choose \"All Catchments\".");
+        return;
+    }
+
+    switch(report){
+
+        case "master":
+
+            console.log("Loading master...");
+
+            document.querySelector(".result-title").textContent =
+                "Hydraulic Design Master Sheet";
+
+            loadHydraulicMaster();
+
+            break;
+
+        case "hydrology":
+
+            console.log("Loading hydrology...");
+
+            document.querySelector(".result-title").textContent =
+                "Hydrologic Analysis Master Sheet";
+
+            loadHydrologyReport();
+
+            break;
+
+        case "depth":
+
+            console.log("Loading depth profile...");
+
+            document.querySelector(".result-title").textContent =
+                "Channels Depth Profile";
+
+            loadDepthProfile();
+
+            break;
+
+        case "summary":
+
+            console.log("Loading summary...");
+
+            document.querySelector(".result-title").textContent =
+                "Design Summary";
+
+            loadDesignSummary();
+
+            break;
+    }
+
+}
+
+
+// =============================
+// PRINT DISPATCHER
+// =============================
+function printReport(){
+
+    const report =
+        document.querySelector('input[name="report_type"]:checked').value;
+
+    switch(report){
+
+        case "master":
+            printHydraulicMaster();
+            break;
+
+        case "hydrology":
+            printHydrologyReport();
+            break;
+
+        case "depth":
+            printDepthProfile();
+            break;
+
+        case "summary":
+            printDesignSummary();
+            break;
+
+    }
+
+}
+
+
+//=========================PRINT HYDROLOGICAL ANALYSIS REPORT=========================
+
+function printHydrologyReport(){
+
+    const project =
+        window.projectData?.title_block?.project_title || "Untitled Project";
+
+    const data = window.projectData;
+
+    const location =
+    document.getElementById("includeLocation").checked
+        ? document.getElementById("projectLocation").value.trim()
+        : "";
+
+    if (!data || !data.catchments || !data.catchments.length) {
+        alert("No catchment data found. Please wait for the page to load and try again.");
+        return;
+    }
+
+    const selected = getSelectedCatchmentIndices();
+
+    const catchments = data.catchments
+        .map((c, i) => ({ ...c, __idx: i }))
+        .filter(c => selected === null || selected.includes(c.__idx));
+
+    if (!catchments.length) {
+        alert("No catchments match your current selection.");
+        return;
+    }
+
+    const ROWS_PER_PAGE = 10;
+    const totalPages    = Math.ceil(catchments.length / ROWS_PER_PAGE);
+
+    let pagesHTML = "";
+
+    for (let p = 0; p < totalPages; p++) {
+
+        const pageCatchments = catchments.slice(p * ROWS_PER_PAGE, (p + 1) * ROWS_PER_PAGE);
+        const isLast         = p === totalPages - 1;
+
+        let rowsHTML = "";
+
+        pageCatchments.forEach((c, i) => {
+
+            const bgColor =
+                i % 2 === 1
+                ? "background:#eaf3ff;"
+                : "background:#ffffff;";
+
+            const z1 = c.z_start;
+            const z2 = c.z_end;
+
+            const diff =
+                (z1 != null && z2 != null)
+                    ? (z1 - z2).toFixed(2)
+                    : "-";
+
+            rowsHTML += `
+            <tr>
+
+                <td style="${bgColor}">${p * ROWS_PER_PAGE + i + 1}</td>
+                <td style="${bgColor}">${c.name}</td>
+                <td style="${bgColor}">${c.description || ""}</td>
+                <td style="${bgColor}">${z1 != null ? Number(z1).toFixed(2) : "-"}</td>
+                <td style="${bgColor}">${z2 != null ? Number(z2).toFixed(2) : "-"}</td>
+                <td style="${bgColor}">${diff}</td>
+                <td style="${bgColor}">${Number(c.length || 0).toFixed(2)}</td>
+                <td style="${bgColor}">${Number(c.slope_local || 0).toFixed(5)}</td>
+                <td style="${bgColor}">${Number(c.area || 0).toFixed(3)}</td>
+                <td style="${bgColor}">${Number(data.parameters.runoff_coefficient || 0).toFixed(2)}</td>
+                <td style="${bgColor}">${Number(c.tc || 0).toFixed(3)}</td>
+                <td style="${bgColor}">${Number(c.intensity || 0).toFixed(3)}</td>
+                <td style="${bgColor}">${Number(c.q_local || 0).toFixed(5)}</td>
+                <td style="${bgColor}">${Number(c.q || 0).toFixed(5)}</td>
+
+            </tr>
+            `;
+        });
+
+        pagesHTML += `
+        <div class="report-page" style="${!isLast ? "page-break-after: always;" : ""}">
+
+            <div class="report-header">
+                <h1>Hydrologic Analysis Master Sheet</h1>
+                <p>Project: <b>${project}</b>${location ? ` &nbsp;|&nbsp; Location: <b>${location}</b>` : ""} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString()}</p>
+            </div>
+
+            <div class="section-title">Catchment Results</div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>S/N</th>
+                        <th>Catchment</th>
+                        <th>Description</th>
+                        <th>U-Elev. (m)</th>
+                        <th>L-Elev. (m)</th>
+                        <th>Diff. (m)</th>
+                        <th>Length (m)</th>
+                        <th>Slope</th>
+                        <th>Area (m²)</th>
+                        <th>Runoff C.</th>
+                        <th>Tc (min)</th>
+                        <th>Intensity (mm/hr)</th>
+                        <th>Flow (m³/s)</th>
+                        <th>∑ Flow (m³/s)</th>
+                    </tr>
+                </thead>
+                <tbody>${rowsHTML}</tbody>
+            </table>
+
+            <div class="page-footer">
+                <span class="footer-left">Storm Solver — Hydrologic Analysis Master Sheet</span>
+                <span class="footer-center">Page ${p + 1} of ${totalPages}</span>
+                <span class="footer-right">Prepared By: ${window.projectData?.title_block?.consultant || ""}</span>
+            </div>
+
+        </div>`;
+    }
+
+    const content = `
+        <html>
+        <head>
+            <title>${project} - Hydrologic Analysis Master Sheet</title>
+            <style>
+                * { box-sizing: border-box; margin: 0; padding: 0; }
+                body { font-family: Arial, sans-serif; background: white; color: #111; }
+                .report-page { padding: 64px 40px 60px 80px; min-height: 100vh; position: relative; }
+                .report-header { border-bottom: 2px solid #2b4a7a; padding-bottom: 12px; margin-bottom: 20px; }
+                .report-header h1 { font-size: 18px; color: #1a2e4a; margin-bottom: 4px; }
+                .report-header p { font-size: 11px; color: #666; }
+                .section-title { font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.07em; color: #555; margin-bottom: 8px; margin-top: 20px; }
+                .constants-box { display: flex; gap: 30px; background: #f0f5ff; border: 1px solid #c8d8f0; border-radius: 6px; padding: 10px 16px; margin-bottom: 20px; flex-wrap: wrap; }
+                .constants-box div { font-size: 12px; color: #333; }
+                .constants-box strong { color: #1a4a8a; }
+                table { width: 100%; border-collapse: collapse; font-size: 10px; }
+                th { background: #dbe9f9; color: #1a2e4a; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 10px; text-align: left; border: 1px solid #b0c8e8; }
+                td { padding: 8px 10px; border: 1px solid #dde; vertical-align: top; color: #222; }
+                small { font-size: 10px; color: #666; }
+                small b { color: #1a4a8a; }
+                .page-footer { position: absolute; bottom: 20px; left: 80px; right: 40px; border-top: 1px solid #ccc; padding-top: 8px; font-size: 10px; color: #888; display: flex; justify-content: space-between; align-items: center; }
+                .footer-center { flex: 1; text-align: center; }
+                .footer-right { text-align: right; }
+                @page { margin: 0; }
+                @media print {
+                    @page { margin: 0; }
+                    th { background: #dbe9f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    .constants-box { background: #f0f5ff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                }
+            </style>
+        </head>
+        <body>${pagesHTML}</body>
+        </html>
+    `;
+
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
+    document.body.appendChild(iframe);
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(content);
+    doc.close();
+    setTimeout(() => {
+        try { iframe.contentWindow.focus(); iframe.contentWindow.print(); }
+        catch(err) { console.error("Print failed:", err); }
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+    }, 300);
+};
+
+
+// ── PRINT HYDRAULIC MASTER REPORT ──
+function printHydraulicMaster(){
+
+    const project =
+        window.projectData?.title_block?.project_title || "Untitled Project";
+
+    const data = window.projectData;
+
+    const location =
+    document.getElementById("includeLocation").checked
+        ? document.getElementById("projectLocation").value.trim()
+        : "";
+
+    if (!data || !data.catchments || !data.catchments.length){
+        alert("No hydraulic data found.");
+        return;
+    }
+
+    const selected = getSelectedCatchmentIndices();
+
+    const catchments = data.catchments
+        .map((c, i) => ({ ...c, __idx: i }))
+        .filter(c => selected === null || selected.includes(c.__idx))
+        .filter(c => c.hydraulic_design);
+
+    if(catchments.length === 0){
+        alert("No hydraulic designs match your current selection.");
+        return;
+    }
+
+    const ROWS_PER_PAGE = 12;
+    const totalPages = Math.ceil(catchments.length / ROWS_PER_PAGE);
+
+    let pagesHTML = "";
+
+    for(let p = 0; p < totalPages; p++){
+
+        const pageCatchments =
+            catchments.slice(
+                p * ROWS_PER_PAGE,
+                (p + 1) * ROWS_PER_PAGE
+            );
+
+        const isLast = p === totalPages - 1;
+
+        let rowsHTML = "";
+
+        pageCatchments.forEach((c, i) => {
+
+            const r = c.hydraulic_design.result;
+
+            const bgColor =
+                i % 2
+                ? "background:#eaf3ff;"
+                : "background:#ffffff;";
+
+            const channelSection =
+                c.hydraulic_design.section === "rectangular"
+
+                ? `${Number(r.b).toFixed(2)} m × ${Number(r.d).toFixed(2)} m`
+
+                : `${Number(r.a).toFixed(2)} m (B) × ${Number(r.b).toFixed(2)} m (T) × ${Number(r.d).toFixed(2)} m (D)`;
+
+            rowsHTML += `
+
+            <tr>
+
+                <td style="${bgColor}">${p * ROWS_PER_PAGE + i + 1}</td>
+
+                <td style="${bgColor}">${c.name}</td>
+
+                <td style="${bgColor}">${c.description || ""}</td>
+
+                <td style="${bgColor}">${c.chainage || ""}</td>
+                
+                <td style="${bgColor}">${Number(c.length || 0).toFixed(2)}</td>
+
+                <td style="${bgColor}">${Number(c.q || 0).toFixed(5)}</td>
+
+                <td style="${bgColor}">${channelSection}</td>
+
+                <td style="${bgColor}">${Number(r.V || 0).toFixed(5)}</td>
+
+                <td style="${bgColor}">${Number(r.Qcap || 0).toFixed(5)}</td>
+
+                <td style="${bgColor}">
+                    ${
+                        r.slope_local != null
+                        ? Number(r.slope_local).toFixed(5)
+                        : "-"
+                    }
+                </td>
+
+                <td style="${bgColor}">
+                    ${
+                        r.ok
+                        ? "<b style='color:#0a7d32;'>PASS</b>"
+                        : "<b style='color:#b22222;'>FAIL</b>"
+                    }
+                </td>
+
+            </tr>
+
+            `;
+
+        });
+
+        pagesHTML += `
+        <div class="report-page" style="${!isLast ? "page-break-after: always;" : ""}">
+
+            <div class="report-header">
+                <h1>Hydraulic Design Master Sheet</h1>
+               <p>Project: <b>${project}</b>${location ? ` &nbsp;|&nbsp; Location: <b>${location}</b>` : ""} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString()}</p>
+            </div>
+
+            <div class="section-title">Hydraulic Design Results</div>
+            
+            <table>
+                <thead>
+                    <tr>
+
+                        <th>S/N</th>
+                        <th>Catchment</th>
+                        <th>Description</th>
+                        <th>Chainage Interval</th>
+                        <th>Length (m)</th>
+                        <th>∑ Flow (m³/s)</th>
+                        <th>Channel Section</th>
+                        <th>Velocity (m/s)</th>
+                        <th>Capacity (m³/s)</th>
+                        <th>Adopted Slope</th>
+                        <th>Status</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    ${rowsHTML}
+
+                </tbody>
+
+            </table>
+
+            <div class="page-footer">
+                <span class="footer-left">Storm Solver — Hydraulic Design Master Sheet</span>
+                <span class="footer-center">Page ${p + 1} of ${totalPages}</span>
+                <span class="footer-right">Prepared By: ${window.projectData?.title_block?.consultant || ""}</span>
+            </div>
+
+        </div>`;
+    }
+
+    const content = `
+        <html>
+        <head>
+            <title>${project} - Hydrologic Analysis Master Sheet</title>
+            <style>
+                * { box-sizing: border-box; margin: 0; padding: 0; }
+                body { font-family: Arial, sans-serif; background: white; color: #111; }
+                .report-page { padding: 64px 40px 60px 80px; min-height: 100vh; position: relative; }
+                .report-header { border-bottom: 2px solid #2b4a7a; padding-bottom: 12px; margin-bottom: 20px; }
+                .report-header h1 { font-size: 18px; color: #1a2e4a; margin-bottom: 4px; }
+                .report-header p { font-size: 11px; color: #666; }
+                .section-title { font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.07em; color: #555; margin-bottom: 8px; margin-top: 20px; }
+                .constants-box { display: flex; gap: 30px; background: #f0f5ff; border: 1px solid #c8d8f0; border-radius: 6px; padding: 10px 16px; margin-bottom: 20px; flex-wrap: wrap; }
+                .constants-box div { font-size: 12px; color: #333; }
+                .constants-box strong { color: #1a4a8a; }
+                table { width: 100%; border-collapse: collapse; font-size: 10px; }
+                th { background: #dbe9f9; color: #1a2e4a; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 10px; text-align: left; border: 1px solid #b0c8e8; }
+                td { padding: 8px 10px; border: 1px solid #dde; vertical-align: top; color: #222; }
+                small { font-size: 10px; color: #666; }
+                small b { color: #1a4a8a; }
+                .page-footer { position: absolute; bottom: 20px; left: 80px; right: 40px; border-top: 1px solid #ccc; padding-top: 8px; font-size: 10px; color: #888; display: flex; justify-content: space-between; align-items: center; }
+                .footer-center { flex: 1; text-align: center; }
+                .footer-right { text-align: right; }
+                @page { margin: 0; }
+                @media print {
+                    @page { margin: 0; }
+                    th { background: #dbe9f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    .constants-box { background: #f0f5ff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                }
+            </style>
+        </head>
+        <body>${pagesHTML}</body>
+        </html>
+    `;
+
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
+    document.body.appendChild(iframe);
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(content);
+    doc.close();
+    setTimeout(() => {
+        try { iframe.contentWindow.focus(); iframe.contentWindow.print(); }
+        catch(err) { console.error("Print failed:", err); }
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+    }, 300);
+};
+
+// =============================
+// PRINT DESIGN SUMMARY
+// =============================
+function printDesignSummary(){
+
+    const project =
+        window.projectData?.title_block?.project_title || "Untitled Project";
+
+    const data = window.projectData;
+
+    const location =
+        document.getElementById("includeLocation").checked
+            ? document.getElementById("projectLocation").value.trim()
+            : "-";
+
+    if (!data || !data.catchments || !data.catchments.length){
+        alert("No hydraulic data found.");
+        return;
+    }
+
+    const selected = getSelectedCatchmentIndices();
+
+    const catchments = data.catchments
+        .map((c,i)=>({...c,__idx:i}))
+        .filter(c => selected === null || selected.includes(c.__idx))
+        .filter(c => c.hydraulic_design);
+
+    if(!catchments.length){
+        alert("No hydraulic designs match your current selection.");
+        return;
+    }
+
+    const ROWS_PER_PAGE = 18;
+
+    const totalPages = Math.ceil(catchments.length / ROWS_PER_PAGE);
+
+    let pagesHTML = "";
+
+    for(let p=0; p<totalPages; p++){
+
+        const pageCatchments =
+            catchments.slice(
+                p*ROWS_PER_PAGE,
+                (p+1)*ROWS_PER_PAGE
+            );
+
+        const isLast = p === totalPages-1;
+
+        let rowsHTML = "";
+
+        pageCatchments.forEach((c,i)=>{
+
+            const r = c.hydraulic_design.result;
+
+            const bg =
+                i%2
+                    ? "background:#eaf3ff;"
+                    : "background:#ffffff;";
+
+            let channelSection="";
+
+            if(c.hydraulic_design.section==="rectangular"){
+
+                channelSection =
+                    `${Number(r.b).toFixed(2)}m(W) × ${Number(r.d).toFixed(2)}m(D)`;
+
+            }else{
+
+                channelSection =
+                    `${Number(r.a).toFixed(2)}m(B) × ${Number(r.b).toFixed(2)}m(T) × ${Number(r.d).toFixed(2)}m(D)`;
+
+            }
+
+            rowsHTML += `
+            <tr>
+
+                <td style="${bg}">
+                    ${p*ROWS_PER_PAGE+i+1}
+                </td>
+
+                <td style="${bg}">
+                    ${location}
+                </td>
+
+                <td style="${bg}">
+                    ${c.name}
+                </td>
+
+                <td style="${bg}">
+                    ${c.chainage || "-"}
+                </td>
+
+                <td style="${bg}">
+                    ${Number(c.length || 0).toFixed(2)}
+                </td>
+
+                <td style="${bg}">
+                    ${channelSection}
+                </td>
+
+            </tr>
+            `;
+
+        });
+
+        pagesHTML += `
+
+        <div class="report-page"
+             style="${!isLast ? "page-break-after:always;" : ""}">
+
+            <div class="report-header">
+
+                <h1>Design Summary</h1>
+
+                <p>
+                    Project:
+                    <b>${project}</b>
+
+                    ${
+                        location !== "-"
+                        ? ` &nbsp;|&nbsp; Location: <b>${location}</b>`
+                        : ""
+                    }
+
+                    &nbsp;|&nbsp;
+
+                    Generated:
+                    ${new Date().toLocaleString()}
+                </p>
+
+            </div>
+
+            <div class="section-title">
+                Channel Design Summary
+            </div>
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>S/N</th>
+                        <th>Location</th>
+                        <th>Catchment</th>
+                        <th>Chainage Interval</th>
+                        <th>Length (m)</th>
+                        <th>Channel Section</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    ${rowsHTML}
+
+                </tbody>
+
+            </table>
+
+            <div class="page-footer">
+
+                <span class="footer-left">
+                    Storm Solver — Design Summary
+                </span>
+
+                <span class="footer-center">
+                    Page ${p+1} of ${totalPages}
+                </span>
+
+                <span class="footer-right">Prepared By: ${window.projectData?.title_block?.consultant || ""}</span>
+         
+            </div>
+
+        </div>
+        `;
+
+    }
+
+    const content = `
+    <html>
+
+    <head>
+
+        <title>${project} - Design Summary</title>
+
+        <style>
+
+            *{
+                box-sizing:border-box;
+                margin:0;
+                padding:0;
+            }
+
+            body{
+                font-family:Arial,sans-serif;
+                background:white;
+                color:#111;
+            }
+
+            .report-page{
+                padding:64px 40px 60px 80px;
+                min-height:100vh;
+                position:relative;
+            }
+
+            .report-header{
+                border-bottom:2px solid #2b4a7a;
+                padding-bottom:12px;
+                margin-bottom:20px;
+            }
+
+            .report-header h1{
+                font-size:18px;
+                color:#1a2e4a;
+                margin-bottom:4px;
+            }
+
+            .report-header p{
+                font-size:11px;
+                color:#666;
+            }
+
+            .section-title{
+                font-size:11px;
+                font-weight:bold;
+                text-transform:uppercase;
+                letter-spacing:.07em;
+                color:#555;
+                margin-bottom:8px;
+                margin-top:20px;
+            }
+
+            table{
+                width:100%;
+                border-collapse:collapse;
+                font-size:10px;
+            }
+
+            th{
+                background:#dbe9f9;
+                color:#1a2e4a;
+                font-size:10px;
+                font-weight:bold;
+                text-transform:uppercase;
+                letter-spacing:.05em;
+                padding:8px 10px;
+                text-align:left;
+                border:1px solid #b0c8e8;
+            }
+
+            td{
+                padding:8px 10px;
+                border:1px solid #dde;
+                color:#222;
+            }
+
+            .page-footer{
+                position:absolute;
+                bottom:20px;
+                left:80px;
+                right:40px;
+                border-top:1px solid #ccc;
+                padding-top:8px;
+                font-size:10px;
+                color:#888;
+                display:flex;
+                justify-content:space-between;
+            }
+
+            .footer-center{
+                flex:1;
+                text-align:center;
+            }
+
+            .footer-right{
+                text-align:right;
+            }
+
+            @page{
+                margin:0;
+            }
+
+            @media print{
+
+                @page{
+                    margin:0;
+                }
+
+                th{
+                    background:#dbe9f9 !important;
+                    -webkit-print-color-adjust:exact;
+                    print-color-adjust:exact;
+                }
+
+                td{
+                    -webkit-print-color-adjust:exact;
+                    print-color-adjust:exact;
+                }
+
+            }
+
+        </style>
+
+    </head>
+
+    <body>
+
+        ${pagesHTML}
+
+    </body>
+
+    </html>
+    `;
+
+    const iframe=document.createElement("iframe");
+
+    iframe.style.cssText="position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
+
+    document.body.appendChild(iframe);
+
+    const doc=iframe.contentWindow.document;
+
+    doc.open();
+    doc.write(content);
+    doc.close();
+
+    setTimeout(()=>{
+
+        try{
+
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+
+        }catch(err){
+
+            console.error(err);
+
+        }
+
+        setTimeout(()=>document.body.removeChild(iframe),1000);
+
+    },300);
+
+}
+
+// ── PRINT DEPTH PROFILE ──
+function printDepthProfile(){
+
+    const project =
+        window.projectData?.title_block?.project_title || "Untitled Project";
+
+    const points = buildDepthProfileData();
+
+    const location =
+    document.getElementById("includeLocation").checked
+        ? document.getElementById("projectLocation").value.trim()
+        : "";
+
+    if (!points.length){
+        alert("No hydraulic designs match your current selection.");
+        return;
+    }
+
+    // print-friendly colors (dark text/lines on white, matches other print reports)
+    const chartSVG = buildDepthProfileSVG(points, {
+        lineColor: "#2b4a7a",
+        gridColor: "#dde",
+        axisColor: "#555",
+        textColor: "#222",
+        yAxisLabel: "Adopted Depth by Catchment (m)",
+        width: 700
+    });
+
+    const ROWS_PER_PAGE = 18;
+
+    const otherPages = [];
+    for (let i = 0; i < points.length; i += ROWS_PER_PAGE){
+        otherPages.push(points.slice(i, i + ROWS_PER_PAGE));
+    }
+
+    const totalPages = 1 + otherPages.length;
+
+    function rowHTML(p, idx, bgColor){
+        return `
+        <tr>
+            <td style="${bgColor}">${idx + 1}</td>
+            <td style="${bgColor}">${p.name}</td>
+            <td style="${bgColor}">${p.description}</td>
+            <td style="${bgColor}">${p.chainage}</td>
+            <td style="${bgColor}">${p.length.toFixed(2)}</td>
+            <td style="${bgColor}">${p.depth.toFixed(2)}</td>
+        </tr>`;
+    }
+
+    function tableHTML(rows, startIndex){
+        const body = rows.map((p, i) => {
+            const bgColor = i % 2 ? "background:#eaf3ff;" : "background:#ffffff;";
+            return rowHTML(p, startIndex + i, bgColor);
+        }).join("");
+
+        return `
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:4%;">S/N</th>
+                    <th style="width:23%;">Catchment</th>
+                    <th style="width:37%;">Description</th>
+                    <th style="width:12%;">Chainage Interval</th>
+                    <th style="width:12%;">Length (m)</th>
+                    <th style="width:12%;">Adopted Depth (m)</th>
+                </tr>
+            </thead>
+            <tbody>${body}</tbody>
+        </table>`;
+    }
+
+    // ── PAGE 1: chart only ──
+    let pagesHTML = `
+    <div class="report-page" style="page-break-after: always;">
+
+        <div class="report-header">
+            <h1>Channels Depth Profile</h1>
+            <p>Project: <b>${project}</b>${location ? ` &nbsp;|&nbsp; Location: <b>${location}</b>` : ""} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString()}</p>
+        </div>
+
+        <div style="display:flex; justify-content:center; margin-top:20px;">
+            ${chartSVG}
+        </div>
+
+        <div class="page-footer">
+            <span class="footer-left">Storm Solver — Channels Depth Profile</span>
+            <span class="footer-center">Page 1 of ${totalPages}</span>
+            <span class="footer-right">Prepared By: ${window.projectData?.title_block?.consultant || ""}</span>
+        </div>
+
+    </div>`;
+
+    // ── PAGE 2+: table only ──
+    otherPages.forEach((rows, p) => {
+        const isLast = p === otherPages.length - 1;
+        const startIndex = p * ROWS_PER_PAGE;
+
+        pagesHTML += `
+        <div class="report-page" style="${!isLast ? "page-break-after: always;" : ""}">
+
+            <div class="report-header">
+                <h1>Channels Depth Profile (continued)</h1>
+                <p>Project: <b>${project}</b> &nbsp;|&nbsp; Generated: ${new Date().toLocaleString()}</p>
+            </div>
+
+            <div class="section-title">Adopted Depth by Catchment</div>
+
+            ${tableHTML(rows, startIndex)}
+
+            <div class="page-footer">
+                <span class="footer-left">Storm Solver — Depth Profile</span>
+                <span class="footer-center">Page ${p + 2} of ${totalPages}</span>
+                <span class="footer-right">Prepared By: ${window.projectData?.title_block?.consultant || ""}</span>
+            </div>
+
+        </div>`;
+    });
+
+    const content = `
+        <html>
+        <head>
+            <title>${project} -Channels Depth Profile</title>
+            <style>
+                * { box-sizing: border-box; margin: 0; padding: 0; }
+                body { font-family: Arial, sans-serif; background: white; color: #111; }
+                .report-page { padding: 64px 40px 60px 80px; min-height: 100vh; position: relative; }
+                .report-header { border-bottom: 2px solid #2b4a7a; padding-bottom: 12px; margin-bottom: 20px; }
+                .report-header h1 { font-size: 18px; color: #1a2e4a; margin-bottom: 4px; }
+                .report-header p { font-size: 11px; color: #666; }
+                .section-title { font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.07em; color: #555; margin-bottom: 8px; margin-top: 20px; }
+                table { width: 100%; border-collapse: collapse; font-size: 10px; }
+                th { background: #dbe9f9; color: #1a2e4a; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 10px; text-align: left; border: 1px solid #b0c8e8; }
+                td { padding: 8px 10px; border: 1px solid #dde; vertical-align: top; color: #222; }
+                .page-footer { position: absolute; bottom: 20px; left: 80px; right: 40px; border-top: 1px solid #ccc; padding-top: 8px; font-size: 10px; color: #888; display: flex; justify-content: space-between; align-items: center; }
+                .footer-center { flex: 1; text-align: center; }
+                .footer-right { text-align: right; }
+                @page { margin: 0; }
+                @media print {
+                    @page { margin: 0; }
+                    th { background: #dbe9f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                }
+            </style>
+        </head>
+        <body>${pagesHTML}</body>
+        </html>
+    `;
+
+    const iframe2 = document.createElement("iframe");
+    iframe2.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
+    document.body.appendChild(iframe2);
+    const doc2 = iframe2.contentWindow.document;
+    doc2.open();
+    doc2.write(content);
+    doc2.close();
+    setTimeout(() => {
+        try { iframe2.contentWindow.focus(); iframe2.contentWindow.print(); }
+        catch(err) { console.error("Print failed:", err); }
+        setTimeout(() => document.body.removeChild(iframe2), 1000);
+    }, 300);
+};
+
+// =============================
+// PROJECT LOCATION TOGGLE
+// =============================
+document.getElementById("includeLocation").addEventListener("change", function () {
+
+    document.getElementById("locationBox").style.display =
+        this.checked ? "block" : "none";
+
+});
+
+function exportPDF(){
+
+    const report =
+        document.querySelector('input[name="report_type"]:checked').value;
+
+    switch(report){
+
+        case "master":
+            exportHydraulicMasterPDF();
+            break;
+
+        case "hydrology":
+            exportHydrologyPDF();
+            break;
+
+        case "depth":
+            exportDepthProfilePDF();
+            break;
+
+        case "summary":
+            exportSummaryPDF();
+            break;
+    }
+
+}
+
+async function exportHydrologyPDF() {
+
+    try {
+
+        window.projectData.title_block.project_title || "Untitled Project";
+
+        const data = window.projectData;
+
+        const location =
+            document.getElementById("includeLocation").checked
+                ? document.getElementById("projectLocation").value.trim()
+                : "";
+
+        if (!data || !data.catchments || !data.catchments.length) {
+            alert("No catchment data found.");
+            return;
+        }
+
+        const selected = getSelectedCatchmentIndices();
+
+        const catchments = data.catchments
+            .map((c, i) => ({ ...c, __idx: i }))
+            .filter(c => selected === null || selected.includes(c.__idx));
+
+        if (!catchments.length) {
+            alert("No catchments match your current selection.");
+            return;
+        }
+
+        // ------------------------------------
+        // Create PDF
+        // ------------------------------------
+
+        const { jsPDF } = window.jspdf;
+
+        const doc = new jsPDF({
+            orientation: "landscape",
+            unit: "mm",
+            format: "a4"
+        });
+
+        // ------------------------------------
+        // Cover Page
+        // ------------------------------------
+
+        window.reportMeta = {
+
+            projectTitle:    window.projectData.title_block.project_title      || "",
+            projectLocation: window.projectData.title_block.project_location   || "",
+
+            client:          window.projectData.title_block.client             || "",
+            clientLogo:      window.projectData.title_block.client_logo        || "",
+
+            consultant:      window.projectData.title_block.consultant         || "",
+            consultantLogo:  window.projectData.title_block.consultant_logo    || "",
+
+            contractor:      window.projectData.title_block.contractor         || "",
+
+            designCodes:     window.projectData.title_block.design_codes       || "",
+            referenceNo:     window.projectData.title_block.reference_no       || "",
+
+            date:            window.projectData.title_block.date               || "",
+            revisionDate:    window.projectData.title_block.revision_date      || "",
+
+            designedBy:      window.projectData.title_block.designed_by        || "",
+            checkedBy:       window.projectData.title_block.checked_by         || "",
+            approvedBy:      window.projectData.title_block.approved_by        || ""
+
+        };
+
+
+        await buildCoverPage(
+            doc,
+            window.reportMeta,
+            "Hydrologic Analysis Master Sheet"
+        );
+
+
+        // ------------------------------------
+        // First Report Page
+        // ------------------------------------
+
+        doc.addPage("a4", "landscape");
+
+        const pw = doc.internal.pageSize.getWidth();
+        const ph = doc.internal.pageSize.getHeight();
+
+        const left = 12;
+        const right = pw - 7;
+
+        const rowH = 8;
+        const firstPageTop = 42 + rowH;
+        const otherPageTop = 42 + rowH;
+
+        const firstPageRows = Math.floor((ph - 14 - firstPageTop) / rowH);
+        const otherPageRows = Math.floor((ph - 14 - otherPageTop) / rowH);
+
+        let totalPages = 1;
+
+        if (catchments.length > firstPageRows) {
+
+            totalPages += Math.ceil(
+                (catchments.length - firstPageRows) / otherPageRows
+            );
+
+        }
+
+        // ---------- Report Header ----------
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(18);
+        doc.setTextColor(26,46,74);
+
+        doc.text(
+            "Hydrologic Analysis Master Sheet",
+            left,
+            18
+        );
+
+        doc.setFont("helvetica","normal");
+        doc.setFontSize(10);
+        doc.setTextColor(90,90,90);
+
+        let headerText =
+            `Project: ${window.reportMeta.projectTitle}`;
+
+        if(location){
+            headerText += `   |   Location: ${location}`;
+        }
+
+        headerText +=
+            `   |   Generated: ${new Date().toLocaleString()}`;
+
+        doc.text(
+            headerText,
+            left,
+            25
+        );
+
+        // underline
+        doc.setDrawColor(26,46,74);
+        doc.setLineWidth(0.5);
+        doc.line(left,29,right,29);
+
+        // ---------- Section Title ----------
+
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(10);
+        doc.setTextColor(90,90,90);
+
+        doc.text(
+            "CATCHMENT RESULTS",
+            left,
+            38
+        );
+
+        // ---------- Footer ----------
+
+        doc.setDrawColor(180);
+        doc.setLineWidth(0.2);
+        doc.line(left, ph - 9, right, ph - 9);
+
+        doc.setFont("helvetica","normal");
+        doc.setFontSize(7);
+        doc.setTextColor(120);
+
+        doc.text("Storm Solver — Hydrologic Analysis Master Sheet", left, ph - 6);
+
+        doc.text(`Page 1 of ${totalPages}`, pw / 2, ph - 6, { align: "center" });
+
+        let footerText = `Prepared By: ${window.reportMeta.consultant || "N/A"}`;
+        doc.text(footerText, right, ph - 6, { align: "right" });
+
+        // ------------------------------------
+        // Table Header
+        // ------------------------------------
+
+        const columns = ["S/N","Catchment","Description","U-Elev. (m)","L-Elev. (m)","Diff. (m)","Length (m)","Slope","Area (m²)","Runoff C.","Tc (min)","I (mm/hr)","Flow (m³/s)","Cuml. Flow(m³/s)"];
+        const widths = [9,37,70,14,14,10,14,13,17,12,13,14,15,20];
+
+        const availableWidth = right - left;
+        const currentWidth = widths.reduce((a,b)=>a+b,0);
+        const scale = availableWidth / currentWidth;
+
+        for(let i=0;i<widths.length;i++){
+            widths[i] *= scale;
+        }
+
+        let x = left;
+        let y = 42;
+
+        doc.setFillColor(219,233,249);
+        doc.setDrawColor(176,200,232);
+
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(7);
+        doc.setTextColor(26,46,74);
+
+        for(let i = 0; i < columns.length; i++) {
+
+            doc.setFillColor(219,233,249);
+
+            doc.rect(x, y, widths[i], rowH, "FD");
+
+            doc.text(columns[i], x + 1, y + 5);
+
+            x += widths[i];
+        }
+
+        // ------------------------------------
+        // Table Rows
+        // ------------------------------------
+
+        let rowY = y + rowH;
+        let pageNo = 1;
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+
+        catchments.forEach((c, idx) => {
+
+            // ------------------------------------
+            // Automatic Page Break
+            // ------------------------------------
+
+            if (rowY + rowH > ph - 14) {
+
+                doc.addPage("a4", "landscape");
+                const pw = doc.internal.pageSize.getWidth();
+                const ph = doc.internal.pageSize.getHeight();
+
+                pageNo++;
+
+                // ---------- HEADER ----------
+
+                doc.setFont("helvetica","bold");
+                doc.setFontSize(18);
+                doc.setTextColor(26,46,74);
+
+                doc.text("Hydrologic Analysis Master Sheet", left, 18);
+
+                doc.setFont("helvetica","normal");
+                doc.setFontSize(10);
+                doc.setTextColor(90);
+
+                doc.text(headerText, left, 25);
+
+                doc.setDrawColor(26,46,74);
+                doc.setLineWidth(0.5);
+                doc.line(left,29,right,29);
+
+                // ---------- SECTION TITLE ----------
+
+                doc.setFont("helvetica","bold");
+                doc.setFontSize(10);
+                doc.setTextColor(90);
+
+                doc.text("CATCHMENT RESULTS", left, 38);
+
+                // ---------- TABLE HEADER ----------
+
+                let hx = left;
+                doc.setFillColor(219,233,249);
+                doc.setDrawColor(176,200,232);
+                doc.setFont("helvetica","bold");
+                doc.setFontSize(7);
+                doc.setTextColor(26,46,74);
+
+                for(let i = 0; i < columns.length; i++){
+
+                    doc.setFillColor(219,233,249);
+
+                    doc.rect(hx,42,widths[i],rowH,"FD");
+
+                    doc.text(columns[i], hx + 1, 47);
+
+                    hx += widths[i];
+
+                }
+
+                // ---------- FOOTER ----------
+
+                doc.setDrawColor(180);
+                doc.setLineWidth(0.2);
+                doc.line(left, ph - 9, right, ph - 9);
+
+                doc.setFont("helvetica","normal");
+                doc.setFontSize(7);
+                doc.setTextColor(120);
+
+                doc.text("Storm Solver — Hydrologic Analysis Master Sheet", left, ph - 6);
+
+                doc.text(`Page ${pageNo} of ${totalPages}`, pw / 2, ph - 6, { align:"center" });
+
+                let footerText = `Prepared By: ${window.reportMeta.consultant || "N/A"}`;
+                doc.text(footerText, right, ph - 6, { align: "right" });
+
+                // first row position on new page
+                rowY = y + rowH;
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(8);
+
+                doc.setDrawColor(176,200,232);
+                doc.setTextColor(30,30,30);
+
+            }
+
+            const z1 = c.z_start;
+            const z2 = c.z_end;
+
+            const diff =
+            (z1 != null && z2 != null)
+                    ? (z1 - z2).toFixed(2)
+                    : "-";
+
+            const values = [
+
+                String(idx + 1),
+
+                c.name || "",
+
+                c.description || "",
+
+                z1 != null ? Number(z1).toFixed(2) : "-",
+
+                z2 != null ? Number(z2).toFixed(2) : "-",
+
+                diff,
+
+                Number(c.length || 0).toFixed(2),
+
+                Number(c.slope_local || 0).toFixed(5),
+
+                Number(c.area || 0).toFixed(3),
+
+                Number(window.projectData.parameters.runoff_coefficient || 0).toFixed(2),
+
+                Number(c.tc || 0).toFixed(3),
+
+                Number(c.intensity || 0).toFixed(3),
+
+                Number(c.q_local || 0).toFixed(5),
+
+                Number(c.q || 0).toFixed(5)
+
+            ];
+
+            let x = left;
+
+            const fill =
+                idx % 2
+                    ? [234,243,255]
+                    : [255,255,255];
+
+            for(let i = 0; i < values.length; i++){
+
+                doc.setFillColor(...fill);
+
+                doc.rect(x, rowY, widths[i], rowH, "FD");
+
+                doc.setTextColor(30,30,30);
+
+                doc.text(values[i], x + 1, rowY + 5);
+
+                x += widths[i];
+
+            }
+
+            rowY += rowH;
+
+        });
+
+
+        const pdfData = doc.output("datauristring");
+
+        console.log("PDF size:", pdfData.length);
+
+        if (window.pywebview?.api?.save_pdf) {
+
+            try {
+
+                await window.pywebview.api.save_pdf(
+                    pdfData,
+                    "Hydrologic Analysis Master Sheet"
+                );
+
+                alert("PDF downloaded successfully.");
+
+            }
+            catch (err) {
+
+                console.error("JS Bridge crash:", err);
+
+                alert("PDF export failed (JS bridge error)");
+
+            }
+
+        } else {
+
+            alert("pywebview API not ready");
+
+            console.log("pywebview state:", window.pywebview);
+
+        }
+
+    }
+    catch (err) {
+
+        console.error(err);
+
+        alert(
+            "PDF Export Error\n\n" +
+            err.message
+        );
+
+    }
+
+}
+
+
+async function exportHydraulicMasterPDF() {
+
+    try {
+
+        window.projectData.title_block.project_title || "Untitled Project";
+
+        const data = window.projectData;
+
+        const location =
+            document.getElementById("includeLocation").checked
+                ? document.getElementById("projectLocation").value.trim()
+                : "";
+
+        if (!data || !data.catchments || !data.catchments.length) {
+            alert("No catchment data found.");
+            return;
+        }
+
+        const selected = getSelectedCatchmentIndices();
+
+        const catchments = data.catchments
+            .map((c, i) => ({ ...c, __idx: i }))
+            .filter(c => selected === null || selected.includes(c.__idx))
+            .filter(c => c.hydraulic_design);
+
+        if (!catchments.length) {
+            alert("No catchments match your current selection.");
+            return;
+        }
+
+        // ------------------------------------
+        // Create PDF
+        // ------------------------------------
+
+        const { jsPDF } = window.jspdf;
+
+        const doc = new jsPDF({
+            orientation: "landscape",
+            unit: "mm",
+            format: "a4"
+        });
+
+        // ------------------------------------
+        // Cover Page
+        // ------------------------------------
+
+        window.reportMeta = {
+
+            projectTitle:    window.projectData.title_block.project_title      || "",
+            projectLocation: window.projectData.title_block.project_location   || "",
+
+            client:          window.projectData.title_block.client             || "",
+            clientLogo:      window.projectData.title_block.client_logo        || "",
+
+            consultant:      window.projectData.title_block.consultant         || "",
+            consultantLogo:  window.projectData.title_block.consultant_logo    || "",
+
+            contractor:      window.projectData.title_block.contractor         || "",
+
+            designCodes:     window.projectData.title_block.design_codes       || "",
+            referenceNo:     window.projectData.title_block.reference_no       || "",
+
+            date:            window.projectData.title_block.date               || "",
+            revisionDate:    window.projectData.title_block.revision_date      || "",
+
+            designedBy:      window.projectData.title_block.designed_by        || "",
+            checkedBy:       window.projectData.title_block.checked_by         || "",
+            approvedBy:      window.projectData.title_block.approved_by        || ""
+
+        };
+
+
+        await buildCoverPage(
+            doc,
+            window.reportMeta,
+            "Hydraulic Design Master Sheet"
+        );
+
+
+        // ------------------------------------
+        // First Report Page
+        // ------------------------------------
+
+        doc.addPage("a4", "landscape");
+
+        const pw = doc.internal.pageSize.getWidth();
+        const ph = doc.internal.pageSize.getHeight();
+
+        const left = 12;
+        const right = pw - 7;
+
+        const rowH = 8;
+        const firstPageTop = 42 + rowH;
+        const otherPageTop = 42 + rowH;
+
+        const firstPageRows = Math.floor((ph - 14 - firstPageTop) / rowH);
+        const otherPageRows = Math.floor((ph - 14 - otherPageTop) / rowH);
+
+        let totalPages = 1;
+
+        if (catchments.length > firstPageRows) {
+
+            totalPages += Math.ceil(
+                (catchments.length - firstPageRows) / otherPageRows
+            );
+
+        }
+
+        // ---------- Report Header ----------
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(18);
+        doc.setTextColor(26,46,74);
+
+        doc.text(
+            "Hydraulic Design Master Sheet",
+            left,
+            18
+        );
+
+        doc.setFont("helvetica","normal");
+        doc.setFontSize(10);
+        doc.setTextColor(90,90,90);
+
+        let headerText =
+            `Project: ${window.reportMeta.projectTitle}`;
+
+        if(location){
+            headerText += `   |   Location: ${location}`;
+        }
+
+        headerText +=
+            `   |   Generated: ${new Date().toLocaleString()}`;
+
+        doc.text(
+            headerText,
+            left,
+            25
+        );
+
+        // underline
+        doc.setDrawColor(26,46,74);
+        doc.setLineWidth(0.5);
+        doc.line(left,29,right,29);
+
+        // ---------- Section Title ----------
+
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(10);
+        doc.setTextColor(90,90,90);
+
+        doc.text(
+            "HYDRAULIC DESIGN RESULTS",
+            left,
+            38
+        );
+
+        // ---------- Footer ----------
+
+        doc.setDrawColor(180);
+        doc.setLineWidth(0.2);
+        doc.line(left, ph - 9, right, ph - 9);
+
+        doc.setFont("helvetica","normal");
+        doc.setFontSize(7);
+        doc.setTextColor(120);
+
+        doc.text("Storm Solver — Hydraulic Design Master Sheet", left, ph - 6);
+
+        doc.text(`Page 1 of ${totalPages}`, pw / 2, ph - 6, { align: "center" });
+
+        let footerText = `Prepared By: ${window.reportMeta.consultant || "N/A"}`;
+        doc.text(footerText, right, ph - 6, { align: "right" });
+
+        // ------------------------------------
+        // Table Header
+        // ------------------------------------
+
+        const columns = ["S/N","Catchment","Description","Chainage","Length (m)","Cuml. Flow(m³/s)","Channel Size","Velocity (m/s)","Capacity (m³/s)","Adopted Slope","Status"];
+        const widths = [9,34,66,25,14,22,43,18,19,19,10];
+
+        const availableWidth = right - left;
+        const currentWidth = widths.reduce((a,b)=>a+b,0);
+        const scale = availableWidth / currentWidth;
+
+        for(let i=0;i<widths.length;i++){
+            widths[i] *= scale;
+        }
+
+        let x = left;
+        let y = 42;
+
+        doc.setFillColor(219,233,249);
+        doc.setDrawColor(176,200,232);
+
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(7);
+        doc.setTextColor(26,46,74);
+
+        for(let i = 0; i < columns.length; i++) {
+
+            doc.setFillColor(219,233,249);
+
+            doc.rect(x, y, widths[i], rowH, "FD");
+
+            doc.text(columns[i], x + 1, y + 5);
+
+            x += widths[i];
+        }
+
+        // ------------------------------------
+        // Table Rows
+        // ------------------------------------
+
+        let rowY = y + rowH;
+        let pageNo = 1;
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+
+        catchments.forEach((c, idx) => {
+
+            // ------------------------------------
+            // Automatic Page Break
+            // ------------------------------------
+
+            if (rowY + rowH > ph - 14) {
+
+                doc.addPage("a4", "landscape");
+                const pw = doc.internal.pageSize.getWidth();
+                const ph = doc.internal.pageSize.getHeight();
+
+                pageNo++;
+
+                // ---------- HEADER ----------
+
+                doc.setFont("helvetica","bold");
+                doc.setFontSize(18);
+                doc.setTextColor(26,46,74);
+
+                doc.text("Hydraulic Design Master Sheet", left, 18);
+
+                doc.setFont("helvetica","normal");
+                doc.setFontSize(10);
+                doc.setTextColor(90);
+
+                doc.text(headerText, left, 25);
+
+                doc.setDrawColor(26,46,74);
+                doc.setLineWidth(0.5);
+                doc.line(left,29,right,29);
+
+                // ---------- SECTION TITLE ----------
+
+                doc.setFont("helvetica","bold");
+                doc.setFontSize(10);
+                doc.setTextColor(90);
+
+                doc.text("HYDRAULIC DESIGN RESULTS", left, 38);
+
+                // ---------- TABLE HEADER ----------
+
+                let hx = left;
+                doc.setFillColor(219,233,249);
+                doc.setDrawColor(176,200,232);
+                doc.setFont("helvetica","bold");
+                doc.setFontSize(7);
+                doc.setTextColor(26,46,74);
+
+                for(let i = 0; i < columns.length; i++){
+
+                    doc.setFillColor(219,233,249);
+
+                    doc.rect(hx,42,widths[i],rowH,"FD");
+
+                    doc.text(columns[i], hx + 1, 47);
+
+                    hx += widths[i];
+
+                }
+
+                // ---------- FOOTER ----------
+
+                doc.setDrawColor(180);
+                doc.setLineWidth(0.2);
+                doc.line(left, ph - 9, right, ph - 9);
+
+                doc.setFont("helvetica","normal");
+                doc.setFontSize(7);
+                doc.setTextColor(120);
+
+                doc.text("Storm Solver — Hydraulic Design Master Sheet", left, ph - 6);
+
+                doc.text(`Page ${pageNo} of ${totalPages}`, pw / 2, ph - 6, { align:"center" });
+
+                let footerText = `Prepared By: ${window.reportMeta.consultant || "N/A"}`;
+                doc.text(footerText, right, ph - 6, { align: "right" });
+
+                // first row position on new page
+                rowY = y + rowH;
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(8);
+
+                doc.setDrawColor(176,200,232);
+                doc.setTextColor(30,30,30);
+
+            }
+
+            const z1 = c.z_start;
+            const z2 = c.z_end;
+
+            const diff =
+            (z1 != null && z2 != null)
+                    ? (z1 - z2).toFixed(2)
+                    : "-";
+
+            const r = c.hydraulic_design.result;
+
+            const channelSize =
+                c.hydraulic_design.section === "rectangular"
+                    ? `${Number(r.b).toFixed(2)} m (W) × ${Number(r.d).toFixed(2)} m (D)`
+                    : `${Number(r.a).toFixed(2)} m (B) × ${Number(r.b).toFixed(2)} m (T) × ${Number(r.d).toFixed(2)} m (D)`;
+
+            const values = [
+
+                String(idx + 1),
+
+                c.name || "",
+
+                c.description || "",
+
+                c.chainage || "",
+
+                Number(c.length || 0).toFixed(2),
+
+                Number(c.q || 0).toFixed(5),
+
+                channelSize,
+
+                Number(r.V || 0).toFixed(5),
+
+                Number(r.Qcap || 0).toFixed(5),
+
+                r.slope_local != null
+                    ? Number(r.slope_local).toFixed(5)
+                    : "-",
+
+                r.ok ? "PASS" : "FAIL"
+
+            ];
+
+
+            let x = left;
+
+            const fill =
+                idx % 2
+                    ? [234,243,255]
+                    : [255,255,255];
+
+            for(let i = 0; i < values.length; i++){
+
+                doc.setFillColor(...fill);
+
+                doc.rect(x, rowY, widths[i], rowH, "FD");
+
+                if(i === values.length - 1){
+
+                    if(values[i] === "PASS"){
+
+                        doc.setTextColor(10,125,50);
+
+                    }else if(values[i] === "FAIL"){
+
+                        doc.setTextColor(178,34,34);
+
+                    }else{
+
+                        doc.setTextColor(30,30,30);
+
+                    }
+
+                }else{
+
+                    doc.setTextColor(30,30,30);
+
+                }
+
+                doc.text(values[i], x + 1, rowY + 5);
+
+                x += widths[i];
+
+            }
+
+            rowY += rowH;
+
+        });
+
+
+        const pdfData = doc.output("datauristring");
+
+        console.log("PDF size:", pdfData.length);
+
+        if (window.pywebview?.api?.save_pdf) {
+
+            try {
+
+                await window.pywebview.api.save_pdf(
+                    pdfData,
+                    "Hydraulic Design Master Sheet"
+                );
+
+                alert("PDF downloaded successfully.");
+
+            }
+            catch (err) {
+
+                console.error("JS Bridge crash:", err);
+
+                alert("PDF export failed (JS bridge error)");
+
+            }
+
+        } else {
+
+            alert("pywebview API not ready");
+
+            console.log("pywebview state:", window.pywebview);
+
+        }
+
+    }
+    catch (err) {
+
+        console.error(err);
+
+        alert(
+            "PDF Export Error\n\n" +
+            err.message
+        );
+
+    }
+
+}
+
+async function exportDepthProfilePDF() {
+
+    try {
+
+        window.projectData.title_block.project_title || "Untitled Project";
+
+        const data = window.projectData;
+
+        const location =
+            document.getElementById("includeLocation").checked
+                ? document.getElementById("projectLocation").value.trim()
+                : "";
+
+        if (!data || !data.catchments || !data.catchments.length) {
+            alert("No catchment data found.");
+            return;
+        }
+
+        const selected = getSelectedCatchmentIndices();
+
+        const catchments = data.catchments
+            .map((c, i) => ({ ...c, __idx: i }))
+            .filter(c => selected === null || selected.includes(c.__idx));
+
+        if (!catchments.length) {
+            alert("No catchments match your current selection.");
+            return;
+        }
+
+        // ------------------------------------
+        // Create PDF
+        // ------------------------------------
+
+        const { jsPDF } = window.jspdf;
+
+        const doc = new jsPDF({
+            orientation: "landscape",
+            unit: "mm",
+            format: "a4"
+        });
+
+        // ------------------------------------
+        // Cover Page
+        // ------------------------------------
+
+        window.reportMeta = {
+
+            projectTitle:    window.projectData.title_block.project_title      || "",
+            projectLocation: window.projectData.title_block.project_location   || "",
+
+            client:          window.projectData.title_block.client             || "",
+            clientLogo:      window.projectData.title_block.client_logo        || "",
+
+            consultant:      window.projectData.title_block.consultant         || "",
+            consultantLogo:  window.projectData.title_block.consultant_logo    || "",
+
+            contractor:      window.projectData.title_block.contractor         || "",
+
+            designCodes:     window.projectData.title_block.design_codes       || "",
+            referenceNo:     window.projectData.title_block.reference_no       || "",
+
+            date:            window.projectData.title_block.date               || "",
+            revisionDate:    window.projectData.title_block.revision_date      || "",
+
+            designedBy:      window.projectData.title_block.designed_by        || "",
+            checkedBy:       window.projectData.title_block.checked_by         || "",
+            approvedBy:      window.projectData.title_block.approved_by        || ""
+
+        };
+
+        await buildCoverPage(
+            doc,
+            window.reportMeta,
+            "Channels Depth Profile"
+        );
+
+        // ------------------------------------
+        // Shared layout constants
+        // ------------------------------------
+
+        const pw = doc.internal.pageSize.getWidth();
+        const ph = doc.internal.pageSize.getHeight();
+
+        const left = 15;
+        const right = pw - 7;
+
+        const rowH = 8;
+        const tableTop = 42;               // y where header row / first data row starts
+        const otherPageTop = 42 + rowH;
+
+        const otherPageRows = Math.floor((ph - 14 - otherPageTop) / rowH);
+
+        // Page 1 = chart only (0 rows), all catchments go on table pages after it.
+        const totalPages = 1 + Math.ceil(catchments.length / otherPageRows);
+
+        let pageNo = 1;
+
+        const location_ = location; // kept for clarity, same value used below
+
+        let headerText =
+            `Project: ${window.reportMeta.projectTitle}`;
+
+        if (location) {
+            headerText += `   |   Location: ${location}`;
+        }
+
+        headerText += `   |   Generated: ${new Date().toLocaleString()}`;
+
+        const columns = ["S/N", "Catchment", "Description", "Chainage", "Length (m)", "Adopted Depth (m)"];
+        const widths  = [4, 24, 40, 12, 12, 12];
+
+        const availableWidth = right - left;
+        const currentWidth = widths.reduce((a, b) => a + b, 0);
+        const scale = availableWidth / currentWidth;
+
+        for (let i = 0; i < widths.length; i++) {
+            widths[i] *= scale;
+        }
+
+        // ------------------------------------
+        // Helper: draw the shared page header/footer chrome
+        // ------------------------------------
+
+        function drawPageChrome(title, sectionLabel, footerLabel) {
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(18);
+            doc.setTextColor(26, 46, 74);
+            doc.text(title, left, 18);
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            doc.setTextColor(90, 90, 90);
+            doc.text(headerText, left, 25);
+
+            doc.setDrawColor(26, 46, 74);
+            doc.setLineWidth(0.5);
+            doc.line(left, 29, right, 29);
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(10);
+            doc.setTextColor(90, 90, 90);
+            doc.text(sectionLabel, left, 38);
+
+            doc.setDrawColor(180);
+            doc.setLineWidth(0.2);
+            doc.line(left, ph - 9, right, ph - 9);
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(7);
+            doc.setTextColor(120);
+            doc.text(footerLabel, left, ph - 6);
+            doc.text(`Page ${pageNo} of ${totalPages}`, pw / 2, ph - 6, { align: "center" });
+
+            let footerText = `Prepared By: ${window.reportMeta.consultant || "N/A"}`;
+            doc.text(footerText, right, ph - 6, { align: "right" });
+        }
+
+        function drawTableHeader() {
+            let hx = left;
+            doc.setFillColor(219, 233, 249);
+            doc.setDrawColor(176, 200, 232);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(10);
+            doc.setTextColor(26, 46, 74);
+
+            for (let i = 0; i < columns.length; i++) {
+                doc.setFillColor(219, 233, 249);
+                doc.rect(hx, tableTop, widths[i], rowH, "FD");
+                doc.text(columns[i], hx + 1, tableTop + 5);
+                hx += widths[i];
+            }
+        }
+
+        // ------------------------------------
+        // Page 1: Chart only
+        // ------------------------------------
+
+        doc.addPage("a4", "landscape");
+
+        drawPageChrome(
+            "Channels Depth Profile",
+            "CHANNEL DEPTH PROFILE",
+            "Storm Solver — Channels Depth Profile"
+        );
+
+        const points = buildDepthProfileData();
+
+        const chartSVG = buildDepthProfileSVG(points, {
+            lineColor: "#2b4a7a",
+            gridColor: "#dde",
+            axisColor: "#555",
+            textColor: "#222",
+            yAxisLabel: "Adopted Depth by Catchment (m)",
+            width: 700
+        });
+
+        const chartData = await svgToDataURL(chartSVG);
+
+        doc.addImage(
+            chartData,
+            "PNG",
+            18,
+            42,
+            pw - 36,
+            120
+        );
+
+        // ------------------------------------
+        // Page 2+: Table
+        // ------------------------------------
+
+        doc.addPage("a4", "landscape");
+        pageNo++;
+
+        drawPageChrome(
+            "Channels Depth Profile",
+            "ADOPTED DEPTH BY CATCHMENT",
+            "Storm Solver — Channels Depth Profile"
+        );
+
+        drawTableHeader();
+
+        let rowY = tableTop + rowH;
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+
+        catchments.forEach((c, idx) => {
+
+            // ------------------------------------
+            // Automatic Page Break
+            // ------------------------------------
+
+            if (rowY + rowH > ph - 14) {
+
+                doc.addPage("a4", "landscape");
+                pageNo++;
+
+                drawPageChrome(
+                    "Channels Depth Profile",
+                    "ADOPTED DEPTH BY CATCHMENT",
+                    "Storm Solver — Channels Depth Profile"
+                );
+
+                drawTableHeader();
+
+                rowY = tableTop + rowH;
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(8);
+                doc.setDrawColor(176, 200, 232);
+                doc.setTextColor(30, 30, 30);
+            }
+
+            const r = c.hydraulic_design?.result || {};
+
+            const values = [
+                String(idx + 1),
+                c.name || "",
+                c.description || "",
+                c.chainage || "",
+                Number(c.length || 0).toFixed(2),
+                r.d != null ? Number(r.d).toFixed(2) : "-"
+            ];
+
+            let x = left;
+
+            const fill = idx % 2 ? [234, 243, 255] : [255, 255, 255];
+
+            for (let i = 0; i < values.length; i++) {
+                doc.setFillColor(...fill);
+                doc.rect(x, rowY, widths[i], rowH, "FD");
+                doc.setTextColor(30, 30, 30);
+                doc.text(values[i], x + 1, rowY + 5);
+                x += widths[i];
+            }
+
+            rowY += rowH;
+        });
+
+        // ------------------------------------
+        // Save
+        // ------------------------------------
+
+        const pdfData = doc.output("datauristring");
+
+        console.log("PDF size:", pdfData.length);
+
+        if (window.pywebview?.api?.save_pdf) {
+
+            try {
+                await window.pywebview.api.save_pdf(
+                    pdfData,
+                    "Channels Depth Profile"
+                );
+                alert("PDF downloaded successfully.");
+            }
+            catch (err) {
+                console.error("JS Bridge crash:", err);
+                alert("PDF export failed (JS bridge error)");
+            }
+
+        } else {
+            alert("pywebview API not ready");
+            console.log("pywebview state:", window.pywebview);
+        }
+
+    }
+    catch (err) {
+        console.error(err);
+        alert(
+            "PDF Export Error\n\n" +
+            err.message
+        );
+    }
+}
+
+async function exportSummaryPDF() {
+
+    try {
+
+        window.projectData.title_block.project_title || "Untitled Project";
+
+        const data = window.projectData;
+
+        const location =
+            document.getElementById("includeLocation").checked
+                ? document.getElementById("projectLocation").value.trim()
+                : "-";
+
+        if (!data || !data.catchments || !data.catchments.length) {
+            alert("No catchment data found.");
+            return;
+        }
+
+        const selected = getSelectedCatchmentIndices();
+
+        const catchments = data.catchments
+            .map((c, i) => ({ ...c, __idx: i }))
+            .filter(c => selected === null || selected.includes(c.__idx))
+            .filter(c => c.hydraulic_design);
+
+        if (!catchments.length) {
+            alert("No catchments match your current selection.");
+            return;
+        }
+
+        // ------------------------------------
+        // Create PDF (PORTRAIT)
+        // ------------------------------------
+
+        const { jsPDF } = window.jspdf;
+
+        const doc = new jsPDF({
+            orientation: "landscape",
+            unit: "mm",
+            format: "a4"
+        });
+
+        // ------------------------------------
+        // Cover Page
+        // ------------------------------------
+
+        window.reportMeta = {
+
+            projectTitle:    window.projectData.title_block.project_title      || "",
+            projectLocation: window.projectData.title_block.project_location   || "",
+
+            client:          window.projectData.title_block.client             || "",
+            clientLogo:      window.projectData.title_block.client_logo        || "",
+
+            consultant:      window.projectData.title_block.consultant         || "",
+            consultantLogo:  window.projectData.title_block.consultant_logo    || "",
+
+            contractor:      window.projectData.title_block.contractor         || "",
+
+            designCodes:     window.projectData.title_block.design_codes       || "",
+            referenceNo:     window.projectData.title_block.reference_no       || "",
+
+            date:            window.projectData.title_block.date               || "",
+            revisionDate:    window.projectData.title_block.revision_date      || "",
+
+            designedBy:      window.projectData.title_block.designed_by        || "",
+            checkedBy:       window.projectData.title_block.checked_by         || "",
+            approvedBy:      window.projectData.title_block.approved_by        || ""
+
+        };
+
+        await buildCoverPage(
+            doc,
+            window.reportMeta,
+            "Design Summary"
+        );
+
+        // ------------------------------------
+        // First Report Page
+        // ------------------------------------
+
+        doc.addPage("a4", "landscape");
+
+        const pw = doc.internal.pageSize.getWidth();
+        const ph = doc.internal.pageSize.getHeight();
+
+        const left = 15;
+        const right = pw - 8;
+
+        const rowH = 8;
+        const firstPageTop = 42 + rowH;
+        const otherPageTop = 42 + rowH;
+
+        const firstPageRows = Math.floor((ph - 14 - firstPageTop) / rowH);
+        const otherPageRows = Math.floor((ph - 14 - otherPageTop) / rowH);
+
+        let totalPages = 1;
+
+        if (catchments.length > firstPageRows) {
+            totalPages += Math.ceil(
+                (catchments.length - firstPageRows) / otherPageRows
+            );
+        }
+
+        // ---------- Report Header ----------
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(18);
+        doc.setTextColor(26,46,74);
+
+        doc.text("Design Summary", left, 18);
+
+        doc.setFont("helvetica","normal");
+        doc.setFontSize(8);
+        doc.setTextColor(90,90,90);
+
+        let headerText = `Project: ${window.reportMeta.projectTitle}`;
+
+        headerText += `   |   Generated: ${new Date().toLocaleString()}`;
+
+        doc.text(headerText, left, 25);
+
+        doc.setDrawColor(26,46,74);
+        doc.setLineWidth(0.5);
+        doc.line(left,29,right,29);
+
+        // ---------- Section Title ----------
+
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(9);
+        doc.setTextColor(90,90,90);
+
+        doc.text("CHANNEL DESIGN SUMMARY", left, 38);
+
+        // ---------- Footer ----------
+
+        doc.setDrawColor(180);
+        doc.setLineWidth(0.2);
+        doc.line(left, ph - 9, right, ph - 9);
+
+        doc.setFont("helvetica","normal");
+        doc.setFontSize(7);
+        doc.setTextColor(120);
+
+        doc.text("Storm Solver — Design Summary", left, ph - 6);
+        doc.text(`Page 1 of ${totalPages}`, pw / 2, ph - 6, { align: "center" });
+
+        let footerText = `Prepared By: ${window.reportMeta.consultant || "N/A"}`;
+        doc.text(footerText, right, ph - 6, { align: "right" });
+
+        // ------------------------------------
+        // Table Header
+        // ------------------------------------
+
+        const columns = ["S/N","Location","Catchment","Chainage Interval","Length (m)","Channel Section"];
+        const widths = [9,45,45,24,16,32];
+
+        const availableWidth = right - left;
+        const currentWidth = widths.reduce((a,b)=>a+b,0);
+        const scale = availableWidth / currentWidth;
+
+        for(let i=0;i<widths.length;i++){
+            widths[i] *= scale;
+        }
+
+        let x = left;
+        let y = 42;
+
+        doc.setFillColor(219,233,249);
+        doc.setDrawColor(176,200,232);
+
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(9);
+        doc.setTextColor(26,46,74);
+
+        for(let i = 0; i < columns.length; i++) {
+            doc.setFillColor(219,233,249);
+            doc.rect(x, y, widths[i], rowH, "FD");
+            doc.text(columns[i], x + 1, y + 5);
+            x += widths[i];
+        }
+
+        // ------------------------------------
+        // Table Rows
+        // ------------------------------------
+
+        let rowY = y + rowH;
+        let pageNo = 1;
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+
+        catchments.forEach((c, idx) => {
+
+            // ------------------------------------
+            // Automatic Page Break
+            // ------------------------------------
+
+            if (rowY + rowH > ph - 14) {
+
+                doc.addPage("a4", "landscape");
+                const pw = doc.internal.pageSize.getWidth();
+                const ph = doc.internal.pageSize.getHeight();
+
+                pageNo++;
+
+                // ---------- HEADER ----------
+
+                doc.setFont("helvetica","bold");
+                doc.setFontSize(18);
+                doc.setTextColor(26,46,74);
+                doc.text("Design Summary", left, 18);
+
+                doc.setFont("helvetica","normal");
+                doc.setFontSize(8);
+                doc.setTextColor(90);
+                doc.text(headerText, left, 25);
+
+                doc.setDrawColor(26,46,74);
+                doc.setLineWidth(0.5);
+                doc.line(left,29,right,29);
+
+                // ---------- SECTION TITLE ----------
+
+                doc.setFont("helvetica","bold");
+                doc.setFontSize(9);
+                doc.setTextColor(90);
+                doc.text("CHANNEL DESIGN SUMMARY", left, 38);
+
+                // ---------- TABLE HEADER ----------
+
+                let hx = left;
+                doc.setFillColor(219,233,249);
+                doc.setDrawColor(176,200,232);
+                doc.setFont("helvetica","bold");
+                doc.setFontSize(9);
+                doc.setTextColor(26,46,74);
+
+                for(let i = 0; i < columns.length; i++){
+                    doc.setFillColor(219,233,249);
+                    doc.rect(hx,42,widths[i],rowH,"FD");
+                    doc.text(columns[i], hx + 1, 47);
+                    hx += widths[i];
+                }
+
+                // ---------- FOOTER ----------
+
+                doc.setDrawColor(180);
+                doc.setLineWidth(0.2);
+                doc.line(left, ph - 9, right, ph - 9);
+
+                doc.setFont("helvetica","normal");
+                doc.setFontSize(7);
+                doc.setTextColor(120);
+
+                doc.text("Storm Solver — Design Summary", left, ph - 6);
+                doc.text(`Page ${pageNo} of ${totalPages}`, pw / 2, ph - 6, { align:"center" });
+
+                let footerText = `Prepared By: ${window.reportMeta.consultant || "N/A"}`;
+                doc.text(footerText, right, ph - 6, { align: "right" });
+
+                rowY = y + rowH;
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(8);
+                doc.setDrawColor(176,200,232);
+                doc.setTextColor(30,30,30);
+            }
+
+            const r = c.hydraulic_design.result;
+
+            let channelSection = "";
+
+            if (c.hydraulic_design.section === "rectangular") {
+                channelSection = `${Number(r.b).toFixed(2)}m(W) × ${Number(r.d).toFixed(2)}m(D)`;
+            } else {
+                channelSection = `${Number(r.a).toFixed(2)}m(B) × ${Number(r.b).toFixed(2)}m(T) × ${Number(r.d).toFixed(2)}m(D)`;
+            }
+
+            const values = [
+                String(idx + 1),
+                location,
+                c.name || "",
+                c.chainage || "-",
+                Number(c.length || 0).toFixed(2),
+                channelSection
+            ];
+
+            let x = left;
+
+            const fill = idx % 2 ? [234,243,255] : [255,255,255];
+
+            for(let i = 0; i < values.length; i++){
+                doc.setFillColor(...fill);
+                doc.rect(x, rowY, widths[i], rowH, "FD");
+                doc.setTextColor(30,30,30);
+                doc.text(values[i], x + 1, rowY + 5);
+                x += widths[i];
+            }
+
+            rowY += rowH;
+        });
+
+        // ------------------------------------
+        // Save
+        // ------------------------------------
+
+        const pdfData = doc.output("datauristring");
+
+        console.log("PDF size:", pdfData.length);
+
+        if (window.pywebview?.api?.save_pdf) {
+
+            try {
+                await window.pywebview.api.save_pdf(
+                    pdfData,
+                    "Design Summary"
+                );
+                alert("PDF downloaded successfully.");
+            }
+            catch (err) {
+                console.error("JS Bridge crash:", err);
+                alert("PDF export failed (JS bridge error)");
+            }
+
+        } else {
+            alert("pywebview API not ready");
+            console.log("pywebview state:", window.pywebview);
+        }
+
+    }
+    catch (err) {
+        console.error(err);
+        alert(
+            "PDF Export Error\n\n" +
+            err.message
+        );
+    }
+}
+
+</script>
+
+</body>
+
+</html>

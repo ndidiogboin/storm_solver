@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{project}}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* ── WORKSPACE PAGE OVERRIDES ── */
+        .main {
+            height: calc(100vh - 48px);
+            align-items: stretch;
+        }
+
+        /* ── TOPBAR ── */
+        .topbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+        }
+
+        .topbar-title {
+            font-size: 13px;
+            color: #718096;
+            margin-left: 4px;
+            margin-right: auto;
+        }
+
+        /* ── LEFT PANEL ── */
+        .left.ws-left {
+            width: 20%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ws-panel-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: #e2e8f0;
+            margin: 0;
+            padding: 16px 16px 4px 16px;
+        }
+
+        .ws-panel-sub {
+            font-size: 11px;
+            color: #718096;
+            padding: 0 16px 14px 16px;
+            border-bottom: 1px solid #3d4e63;
+        }
+
+        .ws-section {
+            padding: 14px 16px;
+            border-bottom: 1px solid #3d4e63;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .ws-section:last-child {
+            border-bottom: none;
+            flex: 1;
+        }
+
+        .ws-label {
+            font-size: 11px;
+            font-weight: bold;
+            color: #a0aec0;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            margin: 0;
+        }
+
+        .ws-input {
+            width: 100%;
+            padding: 9px 12px;
+            background: #1a202c;
+            color: white;
+            border: 1px solid #4a5568;
+            border-radius: 6px;
+            font-size: 13px;
+            box-sizing: border-box;
+            transition: border-color 0.15s;
+        }
+
+        .ws-input:focus {
+            outline: none;
+            border-color: #577bc7;
+        }
+
+        .ws-input::placeholder {
+            color: #4a5568;
+        }
+
+        .ws-btn {
+            width: 100%;
+            padding: 10px;
+            background: #577bc7;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .ws-btn:hover { background: #4a6db5; }
+
+        .ws-btn-secondary {
+            width: 100%;
+            padding: 10px;
+            background: #2d3748;
+            color: #a0aec0;
+            border: 1px solid #3d4e63;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .ws-btn-secondary:hover {
+            background: #3c5069;
+            color: white;
+        }
+
+        /* ── RIGHT PANEL ── */
+        .right.ws-right {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .ws-right-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .ws-right-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: rgb(198, 202, 202);
+            margin: 0;
+        }
+
+        /* ── CONSTANTS BOX ── */
+        .constants-box {
+            background: #1a202c;
+            border: 1px solid #3d4e63;
+            border-radius: 8px;
+            padding: 12px 16px;
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+
+        .constants-box div {
+            font-size: 13px;
+            color: #a0aec0;
+            margin: 0;
+        }
+
+        .constants-box strong {
+            color: #63b3ed;
+        }
+
+        /* ── RESULT TABLE ── */
+        .ws-table-wrap {
+            flex: 1;
+            background: #111827;
+            border-radius: 8px;
+            border: 1px solid #2d3748;
+            overflow: auto;
+        }
+
+        #resultTable {
+            width: 100%;
+            border-collapse: collapse;
+            background: transparent;
+            color: white;
+        }
+
+        #resultTable th {
+            background: #1e2a3a;
+            color: #a0aec0;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #2d3748;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        #resultTable td {
+            padding: 6px 12px;
+            border-bottom: 1px solid #1e2a3a;
+            font-size: 12px;
+            vertical-align: middle;
+            color: #cbd5e0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            letter-spacing: 0.01em;
+        }
+
+        #resultTable td:last-child {
+            padding: 4px 8px;
+            font-weight: bold;
+            vertical-align: middle;
+
+        #resultTable tr:hover td {
+            background: #1a2535;
+        }
+
+        #resultTable small {
+            color: #63b3ed;
+            font-size: 10px;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        #resultTable small b {
+            color: #63b3ed;
+        }
+
+        /* ── ACTION BUTTONS IN TABLE ── */
+        .action-container {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .full-btn {
+            width: 100%;
+            padding: 5px 8px;
+            font-size: 11px;
+            background: #2d3748;
+            color: #63b3ed;
+            border: 1px solid #3d4e63;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.15s;
+        }
+
+        .full-btn:hover {
+            background: #3d4e63;
+            color: white;
+        }
+
+        .action-row {
+            display: flex;
+            gap: 4px;
+        }
+
+        .action-row button {
+            flex: 1;
+            padding: 5px 4px;
+            font-size: 11px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.15s;
+        }
+
+        .action-row button:first-child {
+            background: #2b4a7a;
+            color: #90cdf4;
+        }
+
+        .action-row button:first-child:hover {
+            background: #3a5f9a;
+        }
+
+        .action-row button:last-child {
+            background: #4a1a1a;
+            color: #fc8181;
+        }
+
+        .action-row button:last-child:hover {
+            background: #6b2020;
+        }
+
+        /* ── PRINT BUTTON ROW ── */
+        .ws-footer {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .print-btn {
+            padding: 9px 20px;
+            background: #2d3748;
+            color: #a0aec0;
+            border: 1px solid #3d4e63;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .print-btn:hover {
+            background: #3d4e63;
+            color: white;
+        }
+
+        /* ── MODALS ── */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal[style*="block"] {
+            display: flex !important;
+        }
+
+        .modal-content {
+            background: #2d3748;
+            color: white;
+            width: 420px;
+            max-width: 95%;
+            max-height: 85vh;
+            overflow-y: auto;
+            margin: 0 auto;
+            padding: 24px;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .modal-content h2,
+        .modal-content h3 {
+            margin: 0 0 4px 0;
+            font-size: 16px;
+            color: #e2e8f0;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 10px 12px;
+            background: #1a202c;
+            color: white;
+            border: 1px solid #4a5568;
+            border-radius: 6px;
+            font-size: 13px;
+            box-sizing: border-box;
+        }
+
+        .modal-content input::placeholder {
+            color: #4a5568;
+        }
+
+        .modal-content input:focus {
+            outline: none;
+            border-color: #577bc7;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .modal-footer button {
+            padding: 9px 18px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .modal-footer .btn-save {
+            background: #577bc7;
+            color: white;
+        }
+
+        .modal-footer .btn-save:hover { background: #4a6db5; }
+
+        .modal-footer .btn-cancel {
+            background: #4a5568;
+            color: white;
+        }
+
+        .modal-footer .btn-cancel:hover { background: #5a6578; }
+
+        /* ── UPSTREAM MODAL ITEMS ── */
+        .upstream-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 10px;
+            border-radius: 6px;
+            border: 1px solid #3d4e63;
+            background: #1a202c;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+
+        .upstream-item:hover {
+            background: #2d3748;
+            border-color: #577bc7;
+        }
+
+        .upstream-item input[type="checkbox"] {
+            accent-color: #577bc7;
+            width: 15px;
+            height: 15px;
+            cursor: pointer;
+        }
+
+        .upstream-item label {
+            cursor: pointer;
+            font-size: 13px;
+            color: #cbd5e0;
+        }
+
+        #upstreamList {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        /* ── EMPTY STATE ── */
+        .ws-empty {
+            text-align: center;
+            color: #4a5568;
+            padding: 60px 20px;
+        }
+
+        .ws-empty p {
+            font-size: 14px;
+            margin: 8px 0 0 0;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="topbar">
+    <button onclick="window.location.href='/'" class="app-btn">Projects</button>
+    <button onclick="window.location.href='/rainfall_manager'" class="app-btn">Rainfall</button>
+    <button onclick="openParams()" class="app-btn">Parameters</button>
+    <button onclick="openHydraulic()" class="app-btn">Hydraulic Design</button>
+    <button onclick="window.location.href='/modeling'" class="app-btn">Models</button>
+    <button onclick="window.location.href='/simulation'" class="app-btn">Simulation</button>
+    <button onclick="window.location.href='/reports'" class="app-btn">Reports</button>
+    <span style="font-size:13px; color:#718096;">Storm Solver — Hydrologic Analysis</span>
+</div>
+
+<div class="main">
+    <button type="button" id="togglePanel" class="action-btn"></button>
+
+    <!-- ── LEFT PANEL ── -->
+    <div class="left ws-left" id="hydrologyPanel">
+
+        <div class="ws-panel-title">Catchment Input</div>
+        <div class="ws-panel-sub">Add a new catchment to the project</div>
+
+        <div class="ws-section">
+            <div class="ws-label">Identity</div>
+            <input id="name" class="ws-input" placeholder="Catchment Name">
+            <input id="desc" class="ws-input" placeholder="Description">
+            <input id="chainage" class="ws-input" placeholder="Chainage (e.g. 0+000 to 0+075)">
+        </div>
+
+        <div class="ws-section">
+            <div class="ws-label">Geometry</div>
+            <input id="area"   class="ws-input" type="number" placeholder="Area of Catchment (m²)">
+            <input id="length" class="ws-input" type="number" placeholder="Channel Length (m)"
+                   oninput="updateComputedSlope()">
+        </div>
+
+        <!-- SLOPE INPUT MODE TOGGLE -->
+        <div class="ws-section">
+            <div class="ws-label">Slope Input Mode</div>
+            <div style="display:flex; gap:8px;">
+                <label style="flex:1; display:flex; align-items:center; gap:2px; padding:7px 10px;
+                               background:#1a202c; border:1px solid #3d4e63; border-radius:6px;
+                               font-size:12px; color:#cbd5e0; cursor:pointer; transition:0.15s;"
+                       id="lblManual">
+                    <input type="radio" name="slope_mode" value="manual" checked
+                           onchange="onSlopeModeChange()" style="accent-color:#577bc7; margin:0;">
+                    Manual
+                </label>
+                <label style="flex:1; display:flex; align-items:center; gap:2px; padding:7px 10px;
+                               background:#1a202c; border:1px solid #3d4e63; border-radius:6px;
+                               font-size:12px; color:#cbd5e0; cursor:pointer; transition:0.15s;"
+                       id="lblComputed">
+                    <input type="radio" name="slope_mode" value="computed"
+                           onchange="onSlopeModeChange()" style="accent-color:#577bc7; margin:0;">
+                    Computed
+                </label>
+            </div>
+
+            <!-- MANUAL MODE -->
+            <div id="manualSlopePanel">
+                <input id="slope_local" class="ws-input" type="number"
+                       placeholder="Channel Slope (manual)">
+            </div>
+
+            <!-- COMPUTED MODE -->
+            <div id="computedSlopePanel" style="display:none;">
+                <input id="z_start" class="ws-input" type="number"
+                       placeholder="Upstream Elevation Z1 (m)"
+                       oninput="updateComputedSlope()">
+                <input id="z_end" class="ws-input" type="number"
+                       placeholder="Downstream Elevation Z2 (m)"
+                       oninput="updateComputedSlope()">
+
+                <!-- LIVE SLOPE PREVIEW -->
+                <div id="slopePreview" style="display:none;
+                     background:#111827; border:1px solid #3d4e63; border-radius:6px;
+                     padding:10px 14px; margin-top:4px;">
+                    <div style="font-size:10px; color:#718096; text-transform:uppercase;
+                                letter-spacing:0.06em; margin-bottom:4px;">Computed Slope</div>
+                    <div style="font-size:18px; font-weight:bold; color:#68d391;"
+                         id="slopePreviewVal">—</div>
+                    <div style="font-size:10px; color:#718096; margin-top:2px;"
+                         id="slopePreviewFormula">—</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ws-section">
+            <button onclick="addCatchment()" class="ws-btn-secondary">+ Add Catchment</button>
+        </div>
+        
+        <div class="ws-section">
+             <div class="ws-label">Filter Displayed Catchments</div>
+
+            <label style="display:flex; align-items:center; gap:4px; padding:4px 0 8px 0; font-size:13px; color:#cbd5e0; cursor:pointer; margin:0; border-bottom:1px solid #3d4e63; margin-bottom:6px;">
+                <input type="checkbox" id="selectAllHydrologyCatchments" checked>
+                <b>Select All</b>
+            </label>
+
+            <div id="hydrologyFilterList" style="max-height:130px; overflow-y:auto; border:1px solid #3d4e63; padding:6px; border-radius:6px; background:#1a202c;"></div>
+
+            <button onclick="renderFilteredResults()" class="ws-btn-secondary" style="margin-top:4px;">
+                Show Selected
+            </button>
+        </div>
+
+    </div>
+
+    <!-- ── RIGHT PANEL ── -->
+    <div class="right ws-right">
+
+        <div class="ws-right-header">
+            <h3 class="ws-right-title">Catchment Results</h3>
+            <button onclick="printReport()" class="app-btn">Print Report</button>
+        </div>
+
+        <div id="constants">
+            <div class="constants-box">
+                <div><strong>C:</strong> —</div>
+                <div><strong>n:</strong> —</div>
+                <div><strong>S:</strong> —</div>
+            </div>
+        </div>
+
+        <div class="ws-table-wrap">
+            <table id="resultTable">
+                <tr>
+                    <th style="width:12%;">Name</th>
+                    <th style="width:38%;">Description</th>
+                    <th style="width:14%;">Cumulative Q (m³/s)</th>
+                    <th style="width:12%;">Upstream</th>
+                    <th style="width:24%;">Actions</th>
+                </tr>
+                <tr>
+                    <td colspan="5">
+                        <div class="ws-empty">
+                            <p>No catchments yet — click <b>+ Catchment</b> to begin</p>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ── PARAMETERS MODAL ── -->
+<div id="paramModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <h2>Project Parameters</h2>
+        <input id="runoff"    placeholder="Runoff Coefficient (C)"   type="number">
+        <input id="manning"   placeholder="Manning's Roughness (n)"  type="number">
+        <input id="slope"     placeholder="Minimum Channel Slope (S)"        type="number">
+        <input id="frequency" placeholder="Design Frequency (yrs)"   type="number">
+        <div class="modal-footer">
+            <button onclick="closeParams()" class="btn-cancel">Cancel</button>
+            <button onclick="saveParams()"  class="btn-save">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── UPSTREAM MODAL ── -->
+<div id="upstreamModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <h3>Set Upstream Catchments</h3>
+        <div id="upstreamList"></div>
+        <div class="modal-footer">
+            <button onclick="closeUpstream()" class="btn-cancel">Cancel</button>
+            <button onclick="saveUpstream()"  class="btn-save">Save</button>
+        </div>
+    </div>
+</div>
+
+<script>
+window.projectData = {{ data | tojson | safe }};
+window.currentProject = "{{project}}";
+</script>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+
+<script>
+// ── Toggle button ──
+document.getElementById("togglePanel").textContent = "⮜";
+
+document.getElementById("togglePanel").onclick = function(){
+
+    document.querySelector(".left").classList.toggle("collapsed");
+
+    this.textContent =
+        document.querySelector(".left").classList.contains("collapsed")
+        ? "☰"
+        : "⮜";
+};
+
+
+// ── Event listrner that computes Q when catchment is added ──
+document.addEventListener("DOMContentLoaded", function(){
+    computeQ();
+});
+
+// ── OVERRIDE openParams to pre-fill saved values ──
+window.openParams = function(){
+    document.getElementById("paramModal").style.display = "block";
+
+    const params = window.projectData?.parameters || {};
+    document.getElementById("runoff").value    = params.runoff_coefficient || "";
+    document.getElementById("manning").value   = params.manning_n          || "";
+    document.getElementById("slope").value     = params.slope              || "";
+    document.getElementById("frequency").value = params.design_frequency   || "";
+};
+
+// ── PRINT HYDROLOGICAL ANALYSIS REPORT ──
+window.printReport = function(){
+
+    const project =
+        window.projectData?.title_block?.project_title || "Untitled Project";
+
+    const constants = document.getElementById("constants")?.innerHTML || "";
+    const data     = window.lastComputedData;
+
+    if (!data || !data.catchments || !data.catchments.length) {
+        alert("No catchment data found. Please wait for the page to load and try again.");
+        return;
+    }
+
+    const checkedIndices = new Set(
+        Array.from(document.querySelectorAll(".hydroFilterCheck:checked")).map(cb => cb.value)
+    );
+
+    const catchments = data.catchments.filter((c, i) => checkedIndices.has(String(i)));
+
+    if (!catchments.length) {
+        alert("No catchments selected. Please select at least one catchment to print.");
+        return;
+    }
+
+    const ROWS_PER_PAGE = 11;
+    const totalPages    = Math.ceil(catchments.length / ROWS_PER_PAGE);
+    
+    let pagesHTML = "";
+
+    for (let p = 0; p < totalPages; p++) {
+
+        const pageCatchments = catchments.slice(p * ROWS_PER_PAGE, (p + 1) * ROWS_PER_PAGE);
+        const isLast         = p === totalPages - 1;
+
+        let rowsHTML = "";
+        pageCatchments.forEach((c, i) => {
+            const upstreamList = (c.upstream || []).join(", ");
+            const bgColor      = i % 2 === 1 ? "background:#eaf3ff;" : "background:#ffffff;";
+            rowsHTML += `
+            <tr>
+                <td style="${bgColor}">${p * ROWS_PER_PAGE + i + 1}</td>
+                <td style="${bgColor}">${c.name}${c.chainage ? `<br><small style="color:#555;">Ch: ${c.chainage}</small>` : ""}</td>
+                <td style="${bgColor}">
+                    ${c.description}<br>
+                    <small><b>Tc:</b> ${Number(c.tc || 0).toFixed(3)} min | <b>I:</b> ${Number(c.intensity || 0).toFixed(3)} mm/hr</small>
+                </td>
+                <td style="${bgColor}">${Number(c.q_local || 0).toFixed(5)}</td>
+                <td style="${bgColor}">${Number(c.q || 0).toFixed(5)}</td>
+                <td style="${bgColor}">${upstreamList}</td>
+            </tr>`;
+        });
+
+        pagesHTML += `
+        <div class="report-page" style="${!isLast ? "page-break-after: always;" : ""}">
+
+            <div class="report-header">
+                <h1>Hydrological Analysis Report</h1>
+                <p>Project: <b>${project}</b> &nbsp;|&nbsp; Generated: ${new Date().toLocaleString()}</p>
+            </div>
+
+            <div class="section-title">Design Parameters</div>
+            ${constants}
+
+            <div class="section-title">Catchment Results</div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:5%;">S/N</th>
+                        <th style="width:20%;">Name</th>
+                        <th style="width:39%;">Description</th>
+                        <th style="width:12%;">Peak Flow (m³/s)</th>
+                        <th style="width:14%;">Cumul. Flow (m³/s)</th>
+                        <th style="width:10%;">Upstream</th>
+                    </tr>
+                </thead>
+                <tbody>${rowsHTML}</tbody>
+            </table>
+
+            <div class="page-footer">
+                <span class="footer-left">Storm Solver — Hydrological Report</span>
+                <span class="footer-center">Page ${p + 1} of ${totalPages}</span>
+                <span class="footer-right">Prepared By: ${window.projectData?.title_block?.consultant || ""}</span>
+            </div>
+
+        </div>`;
+    }
+
+    const content = `
+        <html>
+        <head>
+            <title>${project} - Hydrology Report</title>
+            <style>
+                * { box-sizing: border-box; margin: 0; padding: 0; }
+                body { font-family: Arial, sans-serif; background: white; color: #111; }
+                .report-page { padding: 64px 40px 60px 80px; min-height: 100vh; position: relative; }
+                .report-header { border-bottom: 2px solid #2b4a7a; padding-bottom: 12px; margin-bottom: 20px; }
+                .report-header h1 { font-size: 18px; color: #1a2e4a; margin-bottom: 4px; }
+                .report-header p { font-size: 11px; color: #666; }
+                .section-title { font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.07em; color: #555; margin-bottom: 8px; margin-top: 20px; }
+                .constants-box { display: flex; gap: 30px; background: #f0f5ff; border: 1px solid #c8d8f0; border-radius: 6px; padding: 10px 16px; margin-bottom: 20px; flex-wrap: wrap; }
+                .constants-box div { font-size: 12px; color: #333; }
+                .constants-box strong { color: #1a4a8a; }
+                table { width: 100%; border-collapse: collapse; font-size: 10px; }
+                th { background: #dbe9f9; color: #1a2e4a; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 10px; text-align: left; border: 1px solid #b0c8e8; }
+                td { padding: 8px 10px; border: 1px solid #dde; vertical-align: top; color: #222; }
+                small { font-size: 10px; color: #666; }
+                small b { color: #1a4a8a; }
+                .page-footer { position: absolute; bottom: 20px; left: 80px; right: 40px; border-top: 1px solid #ccc; padding-top: 8px; font-size: 10px; color: #888; display: flex; justify-content: space-between; align-items: center; }
+                .footer-center { flex: 1; text-align: center; }
+                .footer-right { text-align: right; }
+                @page { margin: 0; }
+                @media print {
+                    @page { margin: 0; }
+                    th { background: #dbe9f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    .constants-box { background: #f0f5ff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                }
+            </style>
+        </head>
+        <body>${pagesHTML}</body>
+        </html>
+    `;
+
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
+    document.body.appendChild(iframe);
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(content);
+    doc.close();
+    setTimeout(() => {
+        try { iframe.contentWindow.focus(); iframe.contentWindow.print(); }
+        catch(err) { console.error("Print failed:", err); }
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+    }, 300);
+};
+</script>
+
+</body>
+</html>

@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simulation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .main { height: calc(100vh - 48px); align-items: stretch; }
+
+        /* ── LEFT PANEL ── */
+        .sim-left {
+            width: 26%;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+            height: 100%;
+        }
+
+        .left-controls {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            border-bottom: 1px solid #3d4e63;
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* ── NETWORK CANVAS PANEL ── */
+        .network-panel {
+            flex: 0 0 220px;
+            position: relative;
+            min-height: 220px;
+            background: #111827;
+            border-top: 1px solid #3d4e63;
+            overflow: hidden;
+        }
+
+        #networkCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* ── RIGHT PANEL ── */
+        .sim-right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px 10px 20px;
+            flex-shrink: 0;
+            border-bottom: 1px solid #2d3748;
+        }
+
+        /* ── ANIMATION CANVAS AREA ── */
+        .animation-area {
+            flex: 1;
+            position: relative;
+            background: #0d1117;
+            overflow: hidden;
+        }
+
+        #animCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* ── CHART STRIP AT BOTTOM ── */
+        .chart-strip {
+            height: 220px;
+            flex-shrink: 0;
+            border-top: 1px solid #2d3748;
+            padding: 10px 16px;
+            background: #111827;
+        }
+
+        #simChart { width: 100% !important; height: 100% !important; }
+
+        /* ── PLAYBACK CONTROLS ── */
+        .playback-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 20px;
+            background: #1a202c;
+            border-top: 1px solid #2d3748;
+            flex-shrink: 0;
+        }
+
+        .play-btn {
+            padding: 6px 18px;
+            background: #577bc7;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .play-btn:hover { background: #4a6db5; }
+
+        .time-label {
+            font-size: 12px;
+            color: #a0aec0;
+            min-width: 90px;
+        }
+
+        #timeSlider { flex: 1; accent-color: #577bc7; }
+
+        .speed-label { font-size: 12px; color: #718096; }
+
+        #speedSelect {
+            background: #2d3748;
+            color: white;
+            border: 1px solid #4a5568;
+            border-radius: 5px;
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+
+        /* ── STATS BAR ── */
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+            padding: 8px 20px;
+            background: #0f1923;
+            border-top: 1px solid #1e2a3a;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+
+        .stat-pill { font-size: 12px; color: #a0aec0; }
+        .stat-pill strong { color: #63b3ed; }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <button onclick="window.location.href='/open/{{project}}'" class="app-btn">Back</button>
+    <button onclick="printSimulation()" class="app-btn">Print</button>
+    <span style="font-size:13px; color:#718096;">Storm Solver — Simulation</span>
+</div>
+
+<div class="main">
+    <button type="button" id="togglePanel" class="action-btn"></button>
+
+    <!-- ── LEFT PANEL ── -->
+    <div class="left sim-left">
+
+        <div class="left-controls">
+
+            <div>
+                <h3 class="panel-label">Simulation Mode</h3>
+                <select id="simMode" class="form-control">
+                    <option value="animation">Network Animation</option>
+                    <option value="timestep">Flow Time-Series</option>
+                    <option value="combined">Combined View</option>
+                    <option value="network">Network Map</option>
+                </select>
+            </div>
+
+            <button onclick="runSimulation()" class="gen-btn">▶ Run Simulation</button>
+
+            <div class="panel-divider"></div>
+
+            <!-- CATCHMENT SUMMARY -->
+            <div>
+                <h3 class="panel-label">Catchments</h3>
+                <div style="display:flex; flex-direction:column; gap:4px; flex:1; min-height:0; overflow-y:auto;" id="simCatchList">
+                    {% for c in data.catchments %}
+                    <label style="display:flex; gap:4px; align-items:left; background:#1a202c; border:1px solid #3d4e63; border-radius:6px; padding:4px 4px; cursor:pointer;">
+                        <input type="checkbox" class="simCatchCheck" value="{{ loop.index0 }}" style="width:12px; height:12px; margin:2px 4px 0 0; accent-color:#577bc7; cursor:pointer;">
+                       
+                        <div style="font-size:12px; font-weight:bold; color:#e2e8f0;">{{c.name}}</div>
+                        <div style="font-size:11px; color:#718096; margin-top:2px;">
+                            Q = <span style="color:#63b3ed;">{{c.q}} m³/s</span> &nbsp;|&nbsp;
+                            Tc = <span style="color:#68d391;">{{c.tc}} min</span>
+                           
+                            {% if c.hydraulic_design %}
+                            <div style="font-size:10px; color:#a0aec0; margin-top:2px;">
+                                {% if c.hydraulic_design.result.type == "Rectangular" %}
+                                    {% if (c.hydraulic_design.result.b | round(3)) == (c.hydraulic_design.result.d | round(3)) %}
+                                        Type = Square Section
+                                    {% else %}
+                                        Type = Rectangular Section
+                                    {% endif %}
+                                {% else %}
+                                    Type = Trapezoidal Section
+                                {% endif %}
+                                Capacity = {{ c.hydraulic_design.result.Qcap | round(5) }} m³/s
+                            </div>
+                            {% endif %}
+                        </div>
+                    </label>
+                    {% endfor %}
+                    {% if not data.catchments %}
+                    <div style="font-size:12px; color:#4a5568; padding:10px 0;">No catchments in project</div>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ── RIGHT PANEL ── -->
+    <div class="right sim-right">
+
+        <div class="chart-header">
+            <h3 id="simTitle" style="margin:0;">Network Animation</h3>
+            <span id="simBadge" style="font-size:11px; color:#718096;"></span>
+        </div>
+
+        <!-- ANIMATION CANVAS -->
+        <div class="animation-area" id="animArea">
+            <canvas id="animCanvas"></canvas>
+        </div>
+
+        <!-- STATS BAR -->
+        <div class="stats-bar" id="statsBar" style="display:none;">
+            <div class="stat-pill">Time: <strong><span id="statTime">—</span> min</strong></div>
+            <div class="stat-pill">Peak Node: <strong><span id="statPeak">—</span></strong></div>
+            <div class="stat-pill">Max Flow: <strong><span id="statMax">—</span> m³/s</strong></div>
+        </div>
+
+        <!-- CHART STRIP -->
+        <div class="chart-strip" id="chartStrip" style="display:none;">
+            <canvas id="simChart"></canvas>
+        </div>
+
+        <!-- PLAYBACK CONTROLS -->
+        <div class="playback-bar">
+            <button class="play-btn" id="playBtn" onclick="togglePlay()">▶ Play</button>
+            <input type="range" id="timeSlider" min="0" value="0" step="1">
+            <span class="time-label" id="timeLabel">t = 0.00 min</span>
+            <span class="speed-label">Speed:</span>
+            <select id="speedSelect">
+                <option value="1">1×</option>
+                <option value="2" selected>2×</option>
+                <option value="4">4×</option>
+                <option value="8">8×</option>
+            </select>
+        </div>
+
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='vendor/chart.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/chartjs-plugin-zoom.min.js') }}"></script>
+<script src="{{ url_for('static', filename='simulation.js') }}"></script>
+
+<script>
+// ── TOGGLE LEFT PANEL ──
+document.getElementById("togglePanel").textContent = "⮜";
+
+document.getElementById("togglePanel").onclick = function(){
+    document.querySelector(".left").classList.toggle("collapsed");
+    this.textContent =
+        document.querySelector(".left").classList.contains("collapsed")
+        ? "☰"
+        : "⮜";
+};
+
+function printSimulation() {
+    const mode      = document.getElementById("simMode").value;
+    const title     = document.getElementById("simTitle").textContent || "Simulation";
+    const project   = "{{project}}";
+    const timeLabel = document.getElementById("timeLabel").textContent || "";
+    const statTime  = document.getElementById("statTime").textContent  || "—";
+    const statPeak  = document.getElementById("statPeak").textContent  || "—";
+    const statMax   = document.getElementById("statMax").textContent   || "—";
+
+    // capture canvas
+    const animCanvas = document.getElementById("animCanvas");
+    const animImg    = (animCanvas && animCanvas.offsetWidth > 0)
+        ? animCanvas.toDataURL() : null;
+
+    // apply print theme to chart before capture
+    const chartCanvas = document.getElementById("simChart");
+    const chartStrip  = document.getElementById("chartStrip");
+    let chartImg = null;
+
+    if (chartCanvas && chartStrip.style.display !== "none" && simChart) {
+        simChart.options.plugins.legend.labels.color = "#111";
+        simChart.options.scales.x.title.color        = "#111";
+        simChart.options.scales.y.title.color        = "#111";
+        simChart.options.scales.x.ticks.color        = "#333";
+        simChart.options.scales.y.ticks.color        = "#333";
+        simChart.options.scales.x.grid.color         = "#dde";
+        simChart.options.scales.y.grid.color         = "#dde";
+        simChart.update();
+        chartImg = chartCanvas.toDataURL();
+
+        // restore dark theme
+        simChart.options.plugins.legend.labels.color = "#ffffff";
+        simChart.options.scales.x.title.color        = "#ffffff";
+        simChart.options.scales.y.title.color        = "#ffffff";
+        simChart.options.scales.x.ticks.color        = "#a0aec0";
+        simChart.options.scales.y.ticks.color        = "#a0aec0";
+        simChart.options.scales.x.grid.color         = "#2d3748";
+        simChart.options.scales.y.grid.color         = "#2d3748";
+        simChart.update();
+    }
+
+    // capture mini network
+    const miniCanvas = document.getElementById("networkCanvas");
+    const miniImg    = (miniCanvas && miniCanvas.offsetWidth > 0)
+        ? miniCanvas.toDataURL() : null;
+
+    // build catchment table rows from DOM
+    const catchCards = document.querySelectorAll("#simCatchList label");
+    let catchRows = "";
+    catchCards.forEach(card => {
+        const wrapper = card.children[1]; // div holding name/meta/hydraulic, after the checkbox
+        const name = wrapper?.children[0]?.textContent?.trim() || "";
+        const meta = wrapper?.children[1]?.textContent?.trim() || "";
+        const hyd  = wrapper?.children[2]?.textContent?.trim() || "";
+        if (name) {
+            catchRows += `<tr>
+                <td>${name}</td>
+                <td>${meta}</td>
+                <td>${hyd}</td>
+            </tr>`;
+        }
+    });
+
+    const modeLabels = {
+        animation: "Network Animation — Hydraulic Cross-Sections",
+        timestep:  "Flow Time-Series",
+        combined:  "Combined View — Flood Spread",
+        network:   "Network Map — Drainage Schematic"
+    };
+
+    const content = `
+    <html>
+    <head>
+        <title>Simulation Report — ${project}</title>
+        <style>
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body { font-family: 'Segoe UI', Arial, sans-serif; color: #111; background: white; }
+
+            .report-page { padding: 36px 48px 64px 48px; position: relative; min-height: 100vh; }
+
+            .report-header { border-bottom: 2px solid #2b4a7a; padding-bottom: 12px; margin-bottom: 18px; }
+            .report-header h1 { font-size: 17px; color: #1a2e4a; margin-bottom: 4px; }
+            .report-header-meta { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 6px; }
+            .report-header-meta div { font-size: 11px; color: #555; }
+            .report-header-meta strong { color: #1a4a8a; }
+
+            .section-title {
+                font-size: 10px; font-weight: bold; text-transform: uppercase;
+                letter-spacing: 0.08em; color: #555;
+                margin-bottom: 8px; margin-top: 18px;
+                padding-bottom: 4px; border-bottom: 1px solid #dde;
+            }
+
+            .info-box {
+                display: flex; gap: 20px; flex-wrap: wrap;
+                background: #f0f5ff; border: 1px solid #c8d8f0;
+                border-radius: 6px; padding: 10px 16px; margin-bottom: 14px;
+            }
+            .info-box div    { font-size: 11px; color: #333; }
+            .info-box strong { color: #1a4a8a; }
+
+            /* charts */
+            .chart-grid {
+                display: grid;
+                grid-template-columns: ${chartImg ? "1fr 1fr" : "1fr"};
+                gap: 12px;
+                margin-bottom: 16px;
+            }
+
+            .chart-box {
+                border: 1px solid #dde; border-radius: 6px; padding: 8px;
+            }
+            .chart-box h4 {
+                font-size: 9px; text-transform: uppercase; color: #555;
+                letter-spacing: 0.06em; margin-bottom: 6px;
+            }
+            .chart-box img { width: 100%; height: auto; display: block; }
+
+            /* catchment table */
+            table { width: 100%; border-collapse: collapse; font-size: 11px; }
+            th {
+                background: #dbe9f9; color: #1a2e4a; font-size: 9px;
+                font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em;
+                padding: 7px 10px; border: 1px solid #b0c8e8; text-align: left;
+            }
+            td { padding: 7px 10px; border: 1px solid #dde; color: #222; }
+            td:first-child { font-weight: bold; color: #1a4a8a; }
+            tr:nth-child(even) td { background: #eaf3ff; }
+
+            /* footer */
+            .page-footer {
+                position: fixed; bottom: 18px; left: 48px; right: 48px;
+                border-top: 1px solid #ccc; padding-top: 8px;
+                font-size: 9px; color: #888;
+                display: flex; justify-content: space-between; align-items: center;
+            }
+           
+            @page { margin: 0; size: A4 portrait; }
+            @media print {
+                @page { margin: 0; size: A4 portrait; }
+                th { background: #dbe9f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                tr:nth-child(even) td { background: #eaf3ff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                .info-box { background: #f0f5ff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            }
+        </style>
+    </head>
+    <body>
+    <div class="report-page">
+
+        <div class="report-header">
+            <h1>Network Simulation Report</h1>
+            <div class="report-header-meta">
+                <div><strong>Project:</strong> ${project}</div>
+                <div><strong>Mode:</strong> ${modeLabels[mode] || mode}</div>
+                <div><strong>Generated:</strong> ${new Date().toLocaleString()}</div>
+            </div>
+        </div>
+
+        <div class="section-title">Simulation Parameters</div>
+        <div class="info-box">
+            <div><strong>Simulation Mode:</strong> ${modeLabels[mode] || mode}</div>
+            <div><strong>Time:</strong> ${timeLabel}</div>
+            ${statTime !== "—" ? `<div><strong>Current Time:</strong> ${statTime} min</div>` : ""}
+            ${statPeak !== "—" ? `<div><strong>Peak Node:</strong> ${statPeak}</div>` : ""}
+            ${statMax  !== "—" ? `<div><strong>Max Flow:</strong> ${statMax} m³/s</div>` : ""}
+        </div>
+
+        <div class="section-title">Simulation Output</div>
+        <div class="chart-grid">
+            ${animImg ? `
+            <div class="chart-box">
+                <h4>${title}</h4>
+                <img src="${animImg}">
+            </div>` : ""}
+            ${chartImg ? `
+            <div class="chart-box">
+                <h4>Flow Time-Series</h4>
+                <img src="${chartImg}">
+            </div>` : ""}
+        </div>
+
+        ${catchRows ? `
+        <div class="section-title">Catchment Summary</div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:22%;">Name</th>
+                    <th style="width:44%;">Flow & Tc</th>
+                    <th style="width:34%;">Hydraulic Design</th>
+                </tr>
+            </thead>
+            <tbody>${catchRows}</tbody>
+        </table>` : ""}
+
+        <div class="page-footer">
+            <span>Storm Solver — Network Simulation Report</span>
+            <span class="footer-center"></span>
+            <span>${project}</span>
+        </div>
+
+    </div>
+    </body>
+    </html>`;
+
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
+    document.body.appendChild(iframe);
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(content);
+    doc.close();
+    setTimeout(() => {
+        try { iframe.contentWindow.focus(); iframe.contentWindow.print(); }
+        catch(err) { console.error("Print failed:", err); }
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+    }, 300);
+}
+</script>
+
+</body>
+</html>

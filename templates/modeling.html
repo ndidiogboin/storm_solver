@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Modeling</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="topbar">
+    <button onclick="window.location.href='/open/{{project}}'" class="app-btn">Back</button>
+    <button onclick="printModelingReport()" class="app-btn">Print Report</button>
+    <span style="font-size:13px; color:#718096;">Storm Solver — Modeling</span>
+</div>
+
+<div class="main">
+    <button type="button" id="togglePanel" class="action-btn"></button>
+
+    <!-- LEFT PANEL -->
+    <div class="left">
+
+        <div class="left-controls">
+
+            <div>
+                <h3 class="panel-label">Catchment</h3>
+                <select id="catchmentSelect" class="form-control">
+                    {% for c in data.catchments %}
+                    <option value="{{loop.index0}}">{{c.name}} (Q = {{c.q}} m³/s)</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <h3 class="panel-label">Visualization</h3>
+                <select id="vizMode" class="form-control">
+                    <option value="hydrograph">Hydrograph</option>
+                    <option value="unit">Unit Hydrograph</option>
+                    <option value="rainfall_runoff">Rainfall–Runoff</option>
+                    <option value="idf">IDF Curves</option>
+                </select>
+            </div>
+
+            <button onclick="loadVisualization()" class="gen-btn">Generate Model</button>
+
+            <div class="panel-divider"></div>
+
+        </div>
+
+        <!-- RAIN PANEL -->
+        <div class="rain-panel">
+            <canvas id="rainCanvas" class="rain-canvas"></canvas>
+            <div class="stats-overlay">
+                {% for c in data.catchments %}
+                <div class="stat-card" id="stat-{{loop.index0}}" style="display:none;">
+                    <div class="stat-label">Peak Flow</div>
+                    <div class="stat-value">{{c.q}}<span class="stat-unit">m³/s</span></div>
+                    <div class="stat-sub">{{c.name}}</div>
+                </div>
+                <div class="stat-card" id="stat-tc-{{loop.index0}}" style="display:none;">
+                    <div class="stat-label">Time of Concentration</div>
+                    <div class="stat-value">{{c.tc}}<span class="stat-unit">min</span></div>
+                    <div class="stat-sub">Kirprich-Manning</div>
+                </div>
+                <div class="stat-card" id="stat-i-{{loop.index0}}" style="display:none;">
+                    <div class="stat-label">Rainfall Intensity</div>
+                    <div class="stat-value">{{c.intensity}}<span class="stat-unit">mm/hr</span></div>
+                    <div class="stat-sub">IDF: Tr = {{data.parameters.design_frequency}} yr</div>
+                </div>
+                {% endfor %}
+
+                <!-- fallback if no catchments -->
+                {% if not data.catchments %}
+                <div class="stat-card">
+                    <div class="stat-label">No Catchments</div>
+                    <div class="stat-value" style="font-size:14px;">Add catchments to begin</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right">
+
+        <div class="chart-header">
+            <h3 id="chartTitle" style="margin:0;">Hydrograph</h3>
+            <span id="chartBadge" class="chart-badge"></span>
+        </div>
+
+        <div class="chart-area">
+            <canvas id="chart"></canvas>
+        </div>
+
+        <div class="legend-bar" id="legendBar"></div>
+
+    </div>
+
+</div>
+
+<div id="printCharts"
+     style="position:absolute;
+            left:-10000px;
+            top:-10000px;
+            visibility:hidden;">
+
+    <canvas id="hydroPrintChart" width="700" height="350"></canvas>
+    <canvas id="unitPrintChart" width="700" height="350"></canvas>
+    <canvas id="runoffPrintChart" width="700" height="350"></canvas>
+    <canvas id="idfPrintChart" width="700" height="350"></canvas>
+
+</div>
+
+<script src="{{ url_for('static', filename='vendor/chart.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/chartjs-plugin-zoom.min.js') }}"></script>
+<script src="{{ url_for('static', filename='modeling.js') }}"></script>
+
+<script>
+    document.getElementById("togglePanel").textContent = "⮜";
+
+    document.getElementById("togglePanel").onclick = function(){
+
+        document.querySelector(".left").classList.toggle("collapsed");
+
+        this.textContent =
+            document.querySelector(".left").classList.contains("collapsed")
+            ? "☰"
+            : "⮜";
+
+    };
+
+    
+// ── RAINDROP ANIMATION ──
+const rainCanvas = document.getElementById('rainCanvas');
+const rctx = rainCanvas.getContext('2d');
+const drops = [];
+const splashes = [];
+const NUM = 90;
+
+function resizeRain() {
+    rainCanvas.width = rainCanvas.offsetWidth;
+    rainCanvas.height = rainCanvas.offsetHeight;
+}
+resizeRain();
+window.addEventListener('resize', resizeRain);
+
+for (let i = 0; i < NUM; i++) {
+    drops.push({
+        x: Math.random() * rainCanvas.width,
+        y: Math.random() * rainCanvas.height,
+        len: 12 + Math.random() * 18,
+        speed: 2.5 + Math.random() * 3.5,
+        width: 1.2 + Math.random() * 1.2,
+        opacity: 0.35 + Math.random() * 0.45
+    });
+}
+
+function spawnSplash(x, y) {
+    for (let i = 0; i < 4; i++) {
+        const angle = Math.PI + (Math.random() * Math.PI);
+        const speed = 0.8 + Math.random() * 1.6;
+        splashes.push({
+            x, y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed - 1.5,
+            life: 1.0,
+            radius: 1 + Math.random() * 1.5
+        });
+    }
+}
+
+function drawRain() {
+    rctx.clearRect(0, 0, rainCanvas.width, rainCanvas.height);
+
+    drops.forEach(d => {
+        const grad = rctx.createLinearGradient(d.x, d.y, d.x - 1.5, d.y + d.len);
+        grad.addColorStop(0, `rgba(99,179,237,0)`);
+        grad.addColorStop(1, `rgba(147,210,255,${d.opacity})`);
+
+        rctx.beginPath();
+        rctx.moveTo(d.x, d.y);
+        rctx.lineTo(d.x - 1.5, d.y + d.len);
+        rctx.strokeStyle = grad;
+        rctx.lineWidth = d.width;
+        rctx.lineCap = 'round';
+        rctx.stroke();
+
+        d.y += d.speed;
+        if (d.y > rainCanvas.height + d.len) {
+            spawnSplash(d.x, rainCanvas.height - 2);
+            d.y = -d.len;
+            d.x = Math.random() * rainCanvas.width;
+        }
+    });
+
+    for (let i = splashes.length - 1; i >= 0; i--) {
+        const s = splashes[i];
+        rctx.beginPath();
+        rctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+        rctx.fillStyle = `rgba(147,210,255,${s.life * 0.6})`;
+        rctx.fill();
+        s.x += s.vx;
+        s.y += s.vy;
+        s.vy += 0.12;
+        s.life -= 0.055;
+        if (s.life <= 0) splashes.splice(i, 1);
+    }
+
+    requestAnimationFrame(drawRain);
+}
+drawRain();
+
+// ── SHOW STATS FOR SELECTED CATCHMENT ──
+function updateStats() {
+    const index = document.getElementById('catchmentSelect').value;
+    document.querySelectorAll('.stat-card').forEach(el => el.style.display = 'none');
+    const s1 = document.getElementById(`stat-${index}`);
+    const s2 = document.getElementById(`stat-tc-${index}`);
+    const s3 = document.getElementById(`stat-i-${index}`);
+    if (s1) s1.style.display = 'block';
+    if (s2) s2.style.display = 'block';
+    if (s3) s3.style.display = 'block';
+}
+
+document.getElementById('catchmentSelect').addEventListener('change', updateStats);
+updateStats();
+</script>
+
+</body>
+</html>

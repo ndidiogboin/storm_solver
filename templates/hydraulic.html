@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hydraulic Design - {{project}}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* ── HYDRAULIC PAGE OVERRIDES ── */
+        /* Allow right panel to scroll freely on this page */
+        .main {
+            height: calc(100vh - 48px);
+            align-items: stretch;
+        }
+
+        .left.hyd-left {
+            width: 20%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .right.hyd-right {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* ── LEFT PANEL INTERNALS ── */
+        .hyd-section {
+            padding: 14px 16px;
+            border-bottom: 1px solid #3d4e63;
+        }
+
+        .hyd-section:last-child {
+            border-bottom: none;
+            flex: 1;
+        }
+
+        .hyd-title {
+            font-size: 11px;
+            font-weight: bold;
+            color: #a0aec0;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            margin: 0 0 10px 0;
+        }
+
+        .hyd-page-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: #e2e8f0;
+            margin: 0 0 4px 0;
+            padding: 16px 16px 0 16px;
+        }
+
+        .hyd-page-sub {
+            font-size: 11px;
+            color: #718096;
+            padding: 0 16px 14px 16px;
+            border-bottom: 1px solid #3d4e63;
+        }
+
+        /* ── RADIO GROUPS ── */
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .radio-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 13px;
+            color: #cbd5e0;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #3d4e63;
+            flex: 1;
+            transition: 0.15s;
+        }
+
+        .radio-label:hover {
+            background: #2d3748;
+            border-color: #577bc7;
+        }
+
+        .radio-label input[type="radio"] {
+            accent-color: #577bc7;
+            width: 14px;
+            height: 14px;
+        }
+
+        /* ── INPUTS ── */
+        .hyd-input {
+            width: 100%;
+            padding: 9px 12px;
+            background: #1a202c;
+            color: white;
+            border: 1px solid #4a5568;
+            border-radius: 6px;
+            font-size: 13px;
+            box-sizing: border-box;
+            margin-bottom: 8px;
+            transition: border-color 0.15s;
+        }
+
+        .hyd-input:focus {
+            outline: none;
+            border-color: #577bc7;
+        }
+
+        .hyd-input::placeholder {
+            color: #718096;
+        }
+
+        /* ── SELECT ── */
+        #catchmentSelect {
+            width: 100%;
+            padding: 9px 12px;
+            background: #1a202c;
+            color: white;
+            border: 1px solid #4a5568;
+            border-radius: 6px;
+            font-size: 13px;
+            box-sizing: border-box;
+        }
+
+        /* ── MULTI CATCHMENT BOX ── */
+        #multiCatchList {
+            max-height: 160px;
+            overflow-y: auto;
+            border: 1px solid #3d4e63;
+            padding: 6px;
+            border-radius: 6px;
+            background: #1a202c;
+        }
+
+        #multiCatchList label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 0;
+            font-size: 13px;
+            color: #cbd5e0;
+            cursor: pointer;
+        }
+
+        #multiCatchList input[type="checkbox"] {
+            margin:0;
+            width: 14px;
+            height: 14px;
+            accent-color: #577bc7;
+        }
+
+        #filterCatchList label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 0;
+            font-size: 13px;
+            color: #cbd5e0;
+            cursor: pointer;
+        }
+
+        #filterCatchList input[type="checkbox"] {
+            margin: 0;
+            width: 14px;
+            height: 14px;
+            accent-color: #577bc7;
+        }
+
+        /* ── DESIGN BUTTON ── */
+        .design-btn {
+            width: 100%;
+            padding: 12px;
+            background: #2d3748;
+            color: white;
+            border: 1px solid #3d4e63;
+            border-radius: 7px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            letter-spacing: 0.02em;
+        }
+
+        .design-btn:hover {
+            background: #3a4968;
+        }
+
+        /* ── RIGHT PANEL HEADER ── */
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            gap: 8px;
+        }
+
+        .result-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: rgb(198, 202, 202);
+            margin: 0;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            border: none;
+            padding: 9px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            transition: 0.2s;
+        }
+
+        .action-btn:hover { opacity: 0.88; }
+
+        .btn-print { background: #2d3748; color: #a0aec0; }
+        .btn-pdf   { background: #2d3748; color: #a0aec0; }
+        .btn-title { background: #2d3748; color: #a0aec0; border: 1px solid #3d4e63; }
+
+        /* ── DESIGN TABLE CONTAINER ── */
+        #designContainer {
+            background: #111827;
+            border-radius: 8px;
+            border: 1px solid #2d3748;
+            padding: 16px;
+            flex: 1;
+        }
+
+        #designTable {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            text-align: center;
+            color: #4a5568;
+            padding: 60px 20px;
+        }
+
+        .empty-state-icon {
+            font-size: 36px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            margin: 0;
+        }
+
+        /* ── STATUS BADGE ── */
+        .status-ok {
+            display: inline-block;
+            background: #1a4731;
+            color: #68d391;
+            border: 1px solid #276749;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .status-fail {
+            display: inline-block;
+            background: #4a1a1a;
+            color: #fc8181;
+            border: 1px solid #742a2a;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        
+        .action-btn{
+            background:#2d3748;
+            color:#fff;
+            border:1px solid #3d4e63;
+            border-radius:4px;
+            cursor:pointer;
+            padding:6px 10px;
+        }
+
+        .action-btn:hover{
+            background:#6e7b95;
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <a href="/open/{{project}}">
+        <button class="app-btn">Back</button>
+    </a>
+    <span style="font-size:13px; color:#718096;">Storm Solver — Hydraulic Design</span>
+</div>
+
+<div class="main">
+    <button type="button" id="togglePanel" class="action-btn">⮜</button>
+
+    <!-- ── LEFT PANEL ── -->
+    <div class="left hyd-left">
+
+        <div class="hyd-page-title">Hydraulic Design</div>
+        <div class="hyd-page-sub">{{project}}</div>
+
+        <!-- DESIGN MODE -->
+        <div class="hyd-section">
+            <div class="hyd-title">Design Mode</div>
+            <div class="radio-group">
+                <label class="radio-label">
+                    <input type="radio" name="hyd_mode" value="single" checked>
+                    Single Catchment
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="hyd_mode" value="multi">
+                    Batch Design
+                </label>
+            </div>
+        </div>
+
+        <!-- SINGLE CATCHMENT -->
+        <div class="hyd-section" id="singleModeBox">
+            <div class="hyd-title">Catchment</div>
+            <select id="catchmentSelect"></select>
+        </div>
+
+        <!-- MULTI CATCHMENT -->
+        <div class="hyd-section" id="multiCatchmentBox" style="display:none;">
+            <div class="hyd-title">Select Catchments</div>
+
+            <label style="display:flex; align-items:center; gap:2px; padding:2px 0 2px 0; font-size:13px; color:#cbd5e0; cursor:pointer; margin:0; border-bottom:1px solid #3d4e63; margin-bottom:6px;">
+                <input type="checkbox" id="selectAllCatchments">
+                <b>Select All</b>
+            </label>
+
+            <div id="multiCatchList"></div>
+        </div>
+
+        <!-- SECTION TYPE -->
+        <div class="hyd-section">
+            <div class="hyd-title">Section Type</div>
+            <div class="radio-row">
+                <label class="radio-label">
+                    <input type="radio" name="section" value="rectangular" checked>
+                    Rectangular
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="section" value="trapezoidal">
+                    Trapezoidal
+                </label>
+            </div>
+        </div>
+
+        <!-- MODE -->
+        <div class="hyd-section">
+            <div class="hyd-title">Computation Mode</div>
+            <div class="radio-row">
+                <label class="radio-label">
+                    <input type="radio" name="mode" value="check" checked>
+                    Check
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="mode" value="design">
+                    Design
+                </label>
+            </div>
+        </div>
+
+        <!-- INPUTS -->
+        <div class="hyd-section">
+            <div class="hyd-title">Dimensions</div>
+            <input id="b" class="hyd-input" type="number" placeholder="Top Width  b (m)" step="any">
+            <input id="a" class="hyd-input" type="number" placeholder="Bottom Width  a (m)" step="any">
+            <input id="d" class="hyd-input" type="number" placeholder="Depth  d (m)" step="any">
+        </div>
+
+        <!-- RUN BUTTON -->
+        <div class="hyd-section">
+            <button onclick="runSelectedHydraulic()" class="design-btn">
+                Design Channel
+            </button>
+        </div>
+
+        <!-- FILTER DESIGNED RESULTS -->
+        <div class="hyd-section">
+            <div class="hyd-title">View Designed Catchments</div>
+
+            <label style="display:flex; align-items:center; gap:4px; padding:4px 0 8px 0; font-size:13px; color:#cbd5e0; cursor:pointer; margin:0; border-bottom:1px solid #3d4e63; margin-bottom:6px;">
+                <input type="checkbox" id="selectAllFilterCatchments">
+                <b>Select All</b>
+            </label>
+
+            <div id="filterCatchList" style="max-height:160px; overflow-y:auto; border:1px solid #3d4e63; padding:6px; border-radius:6px; background:#1a202c;"></div>
+
+            <button onclick="showFilteredResults()" class="action-btn" style="width:100%; margin-top:10px;">
+                Show Selected
+            </button>
+        </div>
+
+    </div>
+
+    <!-- ── RIGHT PANEL ── -->
+    <div class="right hyd-right">
+
+        <div class="result-header">
+            <h3 class="result-title">Design Results</h3>
+    
+            <div class="result-actions">
+                <button onclick="openTitleBlockModal()" class="action-btn btn-title">
+                    Title Block
+                </button>
+                <button onclick="printHydraulicResult()" class="action-btn btn-print">
+                    Print
+                </button>
+                <button onclick="window.exportHydraulicPDF()" class="action-btn btn-pdf">
+                    Export PDF
+                </button>
+                <button onclick="clearHydraulicResults()" class="action-btn" style="background:#4a1a1a; color:#fc8181;">
+                    Clear
+                </button>
+            </div>
+        </div>
+
+        <div id="designContainer">
+            <div id="designTable">
+                <div class="empty-state">
+                    <div class="empty-state-icon">⚙</div>
+                    <p>No result yet — select a catchment and click Design Channel</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+// TOGGLE LEFT PANEL
+
+document.getElementById("togglePanel").textContent = "⮜";
+
+document.getElementById("togglePanel").onclick = function () {
+
+    const leftPanel = document.querySelector(".left");
+
+    leftPanel.classList.toggle("collapsed");
+
+    this.textContent =
+        leftPanel.classList.contains("collapsed")
+            ? "☰"
+            : "⮜";
+};
+</script>
+
+<!-- LOAD DATA -->
+<script>
+window.projectData = {{ data | tojson | safe }};
+window.currentProject = "{{project}}";
+
+document.addEventListener("DOMContentLoaded", function(){
+
+    const select = document.getElementById("catchmentSelect");
+
+    if (!select) { console.error("catchmentSelect not found"); return; }
+
+    if (window.projectData?.catchments?.length > 0) {
+        window.projectData.catchments.forEach((c, i) => {
+            select.innerHTML += `<option value="${i}">${c.name} (Q=${c.q})</option>`;
+        });
+    } else {
+        select.innerHTML = `<option value="">No catchments available</option>`;
+    }
+
+    const multiContainer = document.getElementById("multiCatchList");
+    if (multiContainer) {
+        if (window.projectData?.catchments?.length > 0) {
+            window.projectData.catchments.forEach((c, i) => {
+                multiContainer.innerHTML += `
+                    <label>
+                        <input type="checkbox" class="multiCheck" value="${i}">
+                        ${c.name} (Q=${c.q})
+                    </label>
+                `;
+            });
+        } else {
+            multiContainer.innerHTML = "No catchments available";
+        }
+    }
+
+    function updateHydraulicMode(){
+        const mode = document.querySelector('input[name="hyd_mode"]:checked')?.value;
+        const singleBox = document.getElementById("singleModeBox");
+        const multiBox  = document.getElementById("multiCatchmentBox");
+        if (!singleBox || !multiBox) return;
+        if (mode === "multi") {
+            singleBox.style.display = "none";
+            multiBox.style.display  = "block";
+        } else {
+            singleBox.style.display = "block";
+            multiBox.style.display  = "none";
+        }
+    }
+
+    document.querySelectorAll('input[name="hyd_mode"]')
+        .forEach(r => r.addEventListener("change", updateHydraulicMode));
+
+    updateHydraulicMode();
+
+    // SELECT ALL toggle for batch design
+    const selectAllBox = document.getElementById("selectAllCatchments");
+    if (selectAllBox) {
+        selectAllBox.addEventListener("change", function(){
+            document.querySelectorAll(".multiCheck").forEach(cb => {
+                cb.checked = selectAllBox.checked;
+            });
+        });
+    }
+
+    // Keep "Select All" in sync if individual boxes are unchecked/checked manually
+    if (multiContainer) {
+        multiContainer.addEventListener("change", function(e){
+            if (!e.target.classList.contains("multiCheck")) return;
+            const all = document.querySelectorAll(".multiCheck");
+            const checked = document.querySelectorAll(".multiCheck:checked");
+            if (selectAllBox) {
+                selectAllBox.checked = all.length > 0 && checked.length === all.length;
+            }
+        });
+    }
+});
+
+</script>
+
+<!-- HIDDEN PDF REPORT DIV (kept for compatibility) -->
+<div id="pdfReport" style="display:none; background:white; padding:30px; font-family:Arial,sans-serif; color:black; width:800px; margin:0 auto;">
+    <h2 style="text-align:center; margin-bottom:20px;">Hydraulic Design Report</h2>
+    <div id="pdfReportContent"></div>
+</div>
+
+<!-- TITLE BLOCK MODAL -->
+<div id="titleBlockModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999;">
+    <div style="width:480px; max-width:95%; background:#2d3748; color:white; margin:40px auto; padding:24px; border-radius:10px; box-shadow:0 0 30px rgba(0,0,0,0.5); max-height:90vh; overflow-y:auto;">
+
+        <h2 style="margin-top:0; font-size:16px; color:#e2e8f0;">Title Block Information</h2>
+
+        <div style="display:flex; flex-direction:column; gap:10px;">
+
+            <textarea id="tbProjectTitle" placeholder="Project Title" style="width:100%; padding:10px; min-height:70px; resize:vertical; box-sizing:border-box; background:#1a202c; color:white; border:1px solid #4a5568; border-radius:6px;"></textarea>
+
+            <input id="tbProjectLocation" placeholder="Project Location" style="width:100%; padding:10px; box-sizing:border-box; background:#1a202c; color:white; border:1px solid #4a5568; border-radius:6px;">
+
+            <input id="tbClient" placeholder="Client" style="width:100%; padding:10px; box-sizing:border-box; background:#1a202c; color:white; border:1px solid #4a5568; border-radius:6px;">
+
+            <input type="file" id="tbClientLogo" accept=".png,.jpg,.jpeg,.svg" style="width:100%; padding:8px; box-sizing:border-box; background:#1a202c; color:white; border:1px solid #4a5568; border-radius:6px;">
+
+            <img id="clientLogoPreview" style="width:70px; height:70px; object-fit:contain; background:white; border:1px solid #4a5568; border-radius:6px; padding:4px;">
+
+            <input id="tbConsultant" placeholder="Consultant" style="width:100%; padding:10px; box-sizing:border-box; background:#1a202c; color:white; border:1px solid #4a5568; border-radius:6px;">
+
+            <input type="file" id="tbConsultantLogo" accept=".png,.jpg,.jpeg,.svg" style="width:100%; padding:8px; box-sizing:border-box; background:#1a202c; color:white; border:1px solid #4a5568; border-radius:6px;">
+
+            <img id="consultantLogoPreview" style="width:70px; height:70px; object-fit:contain; background:white; border:1px solid #4a5568; border-radius:6px; padding:4px;">
+
+            <input id="tbContractor" placeholder="Contractor" style="width:100%; padding:10px; box-sizing:border-box; background:#1a202c; color:white; border:1px solid #4a5568; border-radius:6px;">
+
+            <textarea id="tbDesignCodes" placeholder="Design Codes" style="width:100%; padding:10px; min-height:60px; resize:vertical; box-sizing:border-box; background:#1a202c; color:white; border:1px solid #4a5568; border-radius:6px;"></textarea>
+
+            <input id="tbReferenceNo" placeholder="Reference Number" style="width:100%; padding:10px; box-sizing:border-box; background:#1a202c; color:white; border:1px solid #4a5568; border-radius:6px;">
+
+            <input id="tbDate" placeholder="Date" style="width:100%; padding:10px; box-sizing:border-box; background:#1a202c; color:white; border:1px solid #4a5568; border-radius:6px;">
+
+            <input id="tbRevisionDate" placeholder="Revision Date" style="width:100%; padding:10px; box-sizing:border-box; background:#1a202c; color:white; border:1px solid #4a5568; border-radius:6px;">
+
+            <input id="tbDesignedBy" placeholder="Designed By" style="width:100%; padding:10px; box-sizing:border-box; background:#1a202c; color:white; border:1px solid #4a5568; border-radius:6px;">
+
+            <input id="tbCheckedBy" placeholder="Checked By" style="width:100%; padding:10px; box-sizing:border-box; background:#1a202c; color:white; border:1px solid #4a5568; border-radius:6px;">
+
+            <input id="tbApprovedBy" placeholder="Approved By" style="width:100%; padding:10px; box-sizing:border-box; background:#1a202c; color:white; border:1px solid #4a5568; border-radius:6px;">
+
+        </div>
+
+        <div class="modal-footer">
+            <button onclick="closeTitleBlockModal()" class="btn-cancel">Cancel</button>
+            <button onclick="saveTitleBlockData()" class="btn-save">Save</button>
+        </div>
+
+    </div>
+</div>
+
+<!-- PDF LIBRARIES -->
+<script src="{{ url_for('static', filename='vendor/jspdf.umd.min.js')}}"></script>
+<script src="{{ url_for('static', filename='vendor/jspdf.plugin.autotable.min.js')}}"></script>
+
+<!-- SHARED TITLE BLOCK -->
+<script src="{{ url_for('static', filename='titleblock.js') }}"></script>
+
+<!-- APP SCRIPT -->
+<script src="{{ url_for('static', filename='hydraulic.js') }}"></script>
+
+<script>
+
+function clearHydraulicResults() {
+    document.getElementById("designTable").innerHTML = `
+        <div class="empty-state">
+            <div class="empty-state-icon">⚙</div>
+            <p>No result yet — select a catchment and click Design Channel</p>
+        </div>
+    `;
+}
+
+    
+function printHydraulicResult(){
+    const container = document.getElementById("designTable");
+    if (!container) { alert("No hydraulic result found"); return; }
+
+    const tables = container.querySelectorAll("table");
+    if (!tables.length) { alert("No hydraulic result found"); return; }
+
+    const project = document.title
+        .replace(" - Hydraulic Design", "")
+        .replace("Hydraulic Design - ", "");
+
+    // ── REBUILD EACH TABLE CLEANLY (strip dark inline styles) ──
+    function cleanTable(t) {
+        const rows = Array.from(t.querySelectorAll("tr"));
+
+        let html = `<table>`;
+
+        rows.forEach((row, ri) => {
+            const cells = Array.from(row.querySelectorAll("th, td"));
+            html += `<tr>`;
+
+            cells.forEach((cell, ci) => {
+                const tag     = cell.tagName.toLowerCase();
+                const colspan = cell.getAttribute("colspan") ? ` colspan="${cell.getAttribute("colspan")}"` : "";
+                const rowspan = cell.getAttribute("rowspan") ? ` rowspan="${cell.getAttribute("rowspan")}"` : "";
+                const isLast  = ri === rows.length - 1;
+                const isFinal = isLast && colspan;
+
+                const thWidths = ["22%", "44%", "12%", "22%"];
+                let cls = "";
+
+                if (tag === "th") {
+                    cls = `class='hdr' style='width:${thWidths[ci] || "auto"}'`;
+                } else if (isFinal) {
+                    cls = "class='final'";
+                } else if (ri === 1) {
+                    // first data row — all 4 columns present (name has rowspan)
+                    if      (ci === 0) cls = "class='col-name'";
+                    else if (ci === 1) cls = "class='col-label'";
+                    else if (ci === 2) cls = "class='col-val'";
+                    else if (ci === 3) cls = "class='col-remark'";
+               
+                } else {
+                    // subsequent rows — name cell absent due to rowspan
+                    if (ci === 0) {
+                        cls = "class='col-label'";
+                    } else if (ci === 1) {
+                        const label = cells[0]?.textContent?.trim() || "";
+                        if (label.includes("Peak Discharge") || label.includes("Qp"))    cls = "class='td-yellow'";
+                        else if (label.includes("Qcap") || label.includes("Designed Discharge"))  cls = "class='td-green'";
+                        else if (label.includes("Allowable") || label.includes("Q_lim")) cls = "class='td-purple'";
+                        else                                                              cls = "class='col-val'";
+                    } else if (ci === 2) {
+                        cls = "class='col-remark'";
+                    }
+                }
+
+                html += `<${tag} ${cls}${colspan}${rowspan}>${cell.innerHTML}</${tag}>`;
+            });
+
+            html += `</tr>`;
+        });
+
+        html += `</table>`;
+        return html;
+    }
+
+    // ── GET CATCHMENT NAME FROM FIRST BOLD TEXT IN TABLE ──
+    function getCatchmentName(t) {
+        const b = t.querySelector("td b");
+        return b ? b.textContent.trim() : "";
+    }
+
+    const pagesHTML = Array.from(tables).map((t, i) => `
+        <div class="report-page">
+
+            <div class="report-header">
+                <h1>Hydraulic Design Report</h1>
+                <p>Project: <b>${project}</b> &nbsp;|&nbsp; Generated: ${new Date().toLocaleString()}</p>
+            </div>
+
+            ${getCatchmentName(t) ? `
+            <div class="catchment-title">${getCatchmentName(t)}</div>` : ""}
+
+            <div class="table-wrap">
+                ${cleanTable(t)}
+            </div>
+
+            <div class="report-footer">
+                <span>Storm Solver — Hydraulic Design Report</span>
+                <span class="footer-center"></span>
+                <span>Page ${i + 1} of ${tables.length}</span>
+            </div>
+
+        </div>
+    `).join("");
+
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
+    document.body.appendChild(iframe);
+    const printWindow = iframe.contentWindow;
+
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Hydraulic Design Report</title>
+            <style>
+                * { box-sizing: border-box; margin: 0; padding: 0; }
+
+                body {
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                    background: white;
+                    color: #111;
+                }
+
+                .report-page {
+                    width: 210mm;
+                    min-height: 297mm;
+                    padding: 20mm 20mm 25mm 20mm;
+                    display: flex;
+                    flex-direction: column;
+                    page-break-after: always;
+                    break-after: page;
+                    box-sizing: border-box;
+                }
+
+                .report-page:last-child {
+                    page-break-after: auto;
+                    break-after: auto;
+                }
+
+                .report-header {
+                    border-bottom: 2px solid #2b4a7a;
+                    padding-bottom: 12px;
+                    margin-bottom: 18px;
+                    flex-shrink: 0;
+                }
+
+                .report-header h1 { font-size: 16px; color: #1a2e4a; margin-bottom: 4px; }
+                .report-header p  { font-size: 10px; color: #666; }
+
+                .catchment-title {
+                    font-size: 12px;
+                    font-weight: bold;
+                    color: #1a2e4a;
+                    text-transform: uppercase;
+                    letter-spacing: 0.06em;
+                    margin-bottom: 10px;
+                    padding: 6px 10px;
+                    background: #eef4fb;
+                    border-left: 4px solid #2b4a7a;
+                    border-radius: 0 4px 4px 0;
+                    flex-shrink: 0;
+                }
+
+                .table-wrap { flex: 1; }
+
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 11px;
+                    page-break-inside: avoid;
+                    table-layout: fixed;
+                }
+
+                .hdr {
+                    background: #dbe9f9;
+                    color: #1a2e4a;
+                    font-size: 10px;
+                    font-weight: bold;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    padding: 8px 10px;
+                    text-align: left;
+                    border: 1px solid #b0c8e8;
+                }
+
+                td {
+                    padding: 7px 10px;
+                    border: 1px solid #d0dce8;
+                    vertical-align: middle;
+                    color: #222;
+                    font-size: 11px;
+                }
+
+               tr:nth-child(even) td:not(.td-yellow):not(.td-green):not(.td-purple) { background: #f4f8ff; }
+
+                .col-name {
+                    font-weight: bold;
+                    color: #1a2e4a;
+                    background: #f0f5fb;
+                    vertical-align: middle;
+                }
+
+                .col-label { color: #333; }
+
+                .col-val {
+                    font-weight: bold;
+                    color: #1a4a8a;
+                    text-align: center;
+                }
+
+                .col-remark {
+                    font-size: 10px;
+                    color: #333;
+                    text-align: center;
+                    vertical-align: middle;
+                    line-height: 1.6;
+                }
+
+                .td-yellow { background: #fef08a !important; font-weight: bold; text-align: center; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                .td-green  { background: #86efac !important; font-weight: bold; text-align: center; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                .td-purple { background: #e9d5ff !important; font-weight: bold; text-align: center; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                
+                .final {
+                    background: #c6f6d5;
+                    font-weight: bold;
+                    text-align: center;
+                    font-size: 13px;
+                    color: #1a2e4a;
+                    padding: 10px;
+                    border-top: 2px solid #68d391;
+                    border-bottom: 2px solid #68d391;
+                }
+
+                .report-footer {
+                    display: flex;
+                    justify-content: space-between;
+                    border-top: 1px solid #ccc;
+                    padding-top: 8px;
+                    font-size: 10px;
+                    color: #888;
+                    margin-top: 16px;
+                    flex-shrink: 0;
+                }
+
+                @page { margin: 0; size: A4; }
+
+                @media print {
+                    @page { margin: 0; size: A4; }
+                    body { margin: 0; padding: 0; }
+
+                    .hdr {
+                        background: #dbe9f9 !important;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                    .col-name {
+                        background: #f0f5fb !important;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                    tr:nth-child(even) td:not(.td-yellow):not(.td-green):not(.td-purple) {
+                        background: #f4f8ff !important;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                    .final {
+                        background: #c6f6d5 !important;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                    .catchment-title {
+                        background: #eef4fb !important;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                    .report-page {
+                        page-break-after: always;
+                        break-after: page;
+                    }
+                    .report-page:last-child {
+                        page-break-after: auto;
+                        break-after: auto;
+                    }
+                }
+            </style>
+        </head>
+        <body>${pagesHTML}</body>
+        </html>
+    `);
+
+    printWindow.document.close();
+    setTimeout(() => {
+        try { iframe.contentWindow.focus(); iframe.contentWindow.print(); }
+        catch(err) { console.error("Print error:", err); alert("Print failed."); }
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+    }, 300);
+}
+
+async function exportHydraulicPDF(){
+    const { jsPDF } = window.jspdf;
+
+    const doc = new jsPDF("p","mm","a4");
+
+    // -------------------------
+    // Cover Page
+    // -------------------------
+    await buildCoverPage(
+        doc,
+        window.reportMeta,
+        "Hydraulic Design Report"
+    );
+
+    // Next page for report
+    doc.addPage();
+
+    const tables = document.querySelectorAll("#designTable table");
+    if (!tables || tables.length === 0) { alert("No hydraulic tables found"); return; }
+    let page = 0;
+
+    tables.forEach((table) => {
+        if (page > 0) doc.addPage();
+
+        const pw = doc.internal.pageSize.width;
+        const projName = window.reportMeta?.projectTitle ||
+            document.title.replace(" - Hydraulic Design","").replace("Hydraulic Design - ","");
+
+        // ── HEADER ──
+        doc.setFillColor(75, 143, 210);
+        doc.rect(0, 0, pw, 18, "F");
+
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(255, 255, 255);
+        doc.text("HYDRAULIC DESIGN REPORT", pw / 2, 8, { align: "center" });
+
+        doc.setFontSize(7.5);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(180, 200, 230);
+        doc.text(`Project: ${projName}`, 14, 13);
+        doc.text(`Generated: ${new Date().toLocaleString()}`, pw - 14, 13, { align: "right" });
+
+        doc.setTextColor(0, 0, 0);
+
+        const finalY = buildTitleBlock(doc, window.reportMeta || {});
+        const safeFinalY = (typeof finalY==="number" && !isNaN(finalY)) ? finalY : 40;
+
+        doc.autoTable({
+            html: table, useCss: false, startY: safeFinalY - 1, theme: "grid",
+
+            headStyles: {
+                fillColor: [219, 233, 249],
+                textColor: [26, 46, 74],
+                fontStyle: "bold",
+                halign: "left"
+            },
+
+            styles: {
+                fontSize: 9,
+                cellPadding: 2,
+                overflow: "linebreak",
+                valign: "middle",
+                lineColor: [0, 0, 0],
+                lineWidth: 0.07
+            },
+
+            margin: { left:25, right:25, top:30, bottom:15 },
+
+            columnStyles: {
+                0: { cellWidth:38, fontStyle:"bold", fillColor:[240,245,251] },
+                1: { cellWidth:64 },
+                2: { cellWidth:25, fontStyle:"bold", textColor:[26,74,138], halign:"center" },
+                3: { cellWidth:37, fontSize:8,       textColor:[51,51,51]  }
+            },
+
+            didParseCell: function(data){
+                if (
+                    data.column.index === 0 &&
+                    data.section === "body" &&
+                    data.cell.raw?.querySelectorAll
+                ){
+
+                    const divs = data.cell.raw.querySelectorAll("div");
+
+                    if(divs.length){
+
+                        data.cell._customLines =
+                            Array.from(divs)
+                            .map(d => d.textContent.trim())
+                            .filter(Boolean);
+
+                    }
+
+                    // DO NOT overwrite AutoTable's text
+                }
+
+                // Force column 0's header to keep its intended style —
+                // needed because columnStyles can otherwise interfere
+                // with headStyles for this specific column
+                if (data.column.index === 0 && data.section === "head") {
+                    data.cell.styles.fillColor  = [219, 233, 249];
+                    data.cell.styles.textColor  = [26, 46, 74];
+                    data.cell.styles.fontStyle  = "bold";
+                }
+
+                const rowCount = data.table.body.length;
+                if(data.section === "body"){
+
+                    // alternating rows (non-label columns)
+                    if(data.row.index % 2 === 0 && data.column.index !== 0){
+                        data.cell.styles.fillColor = [244, 248, 255];
+                    }
+
+                    // highlight key discharge rows
+                    const label = data.table.body[data.row.index]?.cells[1]?.text?.[0] || "";
+                    if (data.column.index === 2) {
+                        if (label.includes("Peak Discharge")) {
+                            data.cell.styles.fillColor = [254, 240, 138];
+                            data.cell.styles.fontStyle = "bold";
+                        } else if (label.includes("Qcap")) {
+                            data.cell.styles.fillColor = [134, 239, 172];
+                            data.cell.styles.fontStyle = "bold";
+                        } else if (label.includes("Allowable")) {
+                            data.cell.styles.fillColor = [233, 213, 255];
+                            data.cell.styles.fontStyle = "bold";
+                        }
+                    }
+
+                    // final provision row
+                    if(data.row.index === rowCount - 1){
+                        data.cell.styles.fillColor = [219, 233, 249];
+                        data.cell.styles.textColor = [26, 46, 74];
+                        data.cell.styles.fontStyle = "bold";
+                        data.cell.styles.halign    = "center";
+                        data.cell.styles.fontSize  = 10;
+                    }
+                }
+            },
+
+            didDrawCell: function(data){
+
+                const rowCount = data.table.body.length;
+
+                // ----------------------------------------------------
+                // Draw custom Catchment block ONLY for column 0 body
+                // (skip the final provision row)
+                // ----------------------------------------------------
+                if (
+                    data.section === "body" &&
+                    data.column.index === 0 &&
+                    data.row.index !== rowCount - 1
+                ){
+
+                    const lines = data.cell._customLines;
+                    if (!lines || !lines.length) return;
+
+                    const styleDefs = [
+                        { size: 9,   color: [26,46,74],    bold: true  }, // Catchment
+                        { size: 8,   color: [100,116,139], bold: false }, // Description
+                        { size: 7.5, color: [26,118,210],  bold: false }, // Chainage
+                        { size: 7.5, color: [22,163,74],   bold: false }  // Length
+                    ];
+
+                    const maxWidth = data.cell.width - 4;
+
+                    const wrapped = [];
+
+                    lines.forEach((line,i)=>{
+ 
+                        const s = styleDefs[i] || styleDefs[styleDefs.length-1];
+
+                        doc.setFontSize(s.size);
+                        doc.setFont("helvetica", s.bold ? "bold" : "normal");
+
+                        const parts = doc.splitTextToSize(line, maxWidth);
+
+                        parts.forEach(p=>wrapped.push({
+                            text:p,
+                            style:s
+                        }));
+
+                    });
+
+                    const lineStep = wrapped.map(w => w.style.size * 0.5 + 1.2);
+                    const totalHeight = lineStep.reduce((a,b)=>a+b,0);
+
+                    doc.setFillColor(...(data.cell.styles.fillColor || [255,255,255]));
+                    doc.rect(
+                        data.cell.x,
+                        data.cell.y,
+                        data.cell.width,
+                        data.cell.height,
+                        "F"
+                    );
+
+                    let y =
+                        data.cell.y +
+                        (data.cell.height-totalHeight)/2 +
+                        (wrapped[0]?.style.size*0.5 || 3);
+
+                    const x = data.cell.x + 2;
+
+                    wrapped.forEach(w=>{
+
+                        doc.setFontSize(w.style.size);
+                        doc.setFont("helvetica", w.style.bold ? "bold":"normal");
+                        doc.setTextColor(...w.style.color);
+
+                        doc.text(w.text,x,y);
+
+                        y += w.style.size*0.5 + 1.2;
+
+                    });
+
+                    doc.setTextColor(0,0,0);
+
+                    doc.setDrawColor(0,0,0);
+                    doc.setLineWidth(0.07);
+
+                    doc.rect(
+                        data.cell.x,
+                        data.cell.y,
+                        data.cell.width,
+                        data.cell.height,
+                        "S"
+                    );
+                }
+
+                // Header and final row are left completely to AutoTable.
+            },
+
+            pageBreak: "auto"
+        });
+        page++;
+    }); 
+
+    // build catchment name list per page for footer label
+    const catchmentNames = Array.from(tables).map(t => {
+        const b = t.querySelector("td b");
+        return b ? b.textContent.trim() : "";
+    });
+
+    const totalPages = doc.internal.getNumberOfPages();
+    // Report pages only (exclude cover)
+    const reportPages = totalPages - 1;
+    for(let i = 2; i <= totalPages; i++){
+        doc.setPage(i);
+        const pw = doc.internal.pageSize.width;
+        const ph = doc.internal.pageSize.height;
+
+        // footer line
+        doc.setDrawColor(180, 180, 180);
+        doc.setLineWidth(0.3);
+        doc.line(14, ph - 14, pw - 14, ph - 14);
+
+        doc.setFontSize(7);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(130, 130, 130);
+
+        // left — consultant from title block
+        const consultant = window.reportMeta?.consultant || "—";
+        doc.text(`Prepared by: ${consultant}`, 14, ph - 9);
+
+        // center — page number
+        doc.text(`Page ${i - 1} of ${reportPages}`, pw / 2, ph - 9, { align: "center" });
+
+        // right — catchment name for this page
+        const catchLabel = catchmentNames[i - 2] || "";
+        doc.text(catchLabel, pw - 14, ph - 9, { align: "right" });
+    }
+
+    const pdfData = doc.output("datauristring");
+    console.log("PDF size:", pdfData.length);
+    if(window.pywebview?.api?.save_pdf){
+        try { await window.pywebview.api.save_pdf(pdfData,"Hydraulic Design Report"); alert("PDF downloaded successfully."); }
+        catch(err){ console.error("JS Bridge crash:", err); alert("PDF export failed (JS bridge error)"); }
+    } else {
+        alert("pywebview API not ready");
+        console.log("pywebview state:", window.pywebview);
+    }
+}
+
+window.exportHydraulicPDF    = exportHydraulicPDF;
+window.saveTitleBlockData    = saveTitleBlockData;
+window.openTitleBlockModal   = openTitleBlockModal;
+window.closeTitleBlockModal  = closeTitleBlockModal;
+</script>
+
+</body>
+</html>

@@ -727,6 +727,56 @@ def delete_catchment():
 
     return jsonify({"status": "deleted"})
 
+
+# INSERT CATCHMENT ABOVE
+@app.route("/insert_catchment_above", methods=["POST"])
+def insert_catchment_above():
+    global current_project
+
+    data = load_project(current_project)
+
+    form = request.form
+    index = int(form.get("index", 0))
+
+    catchment = {
+        "name": form.get("name", "New Catchment"),
+        "description": form.get("description", ""),
+        "chainage": form.get("chainage", ""),
+        "area": float(form.get("area") or 0),
+
+        # HYDROLOGY ENGINE FIELDS
+        "length": float(form.get("length") or 0),
+        "slope_local": float(form.get("slope_local") or 0),
+        "z_start": float(form.get("z_start")) if form.get("z_start") else None,
+        "z_end": float(form.get("z_end")) if form.get("z_end") else None,
+
+        "tc": 0,
+        "q": 0,
+        "upstream": []
+    }
+
+    # Insert before the selected catchment
+    data["catchments"].insert(index, catchment)
+
+    # Shift upstream references after insertion
+    for i, c in enumerate(data["catchments"]):
+
+        if i == index:
+            continue
+
+        c["upstream"] = [
+            up + 1 if up >= index else up
+            for up in c.get("upstream", [])
+        ]
+
+    save_project(current_project, data)
+
+    return jsonify({
+        "status": "inserted",
+        "index": index,
+        "catchment": catchment
+    })
+
 # COMPUTE PEAK FLOW
 @app.route("/compute_q")
 def compute_q():

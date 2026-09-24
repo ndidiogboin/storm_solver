@@ -415,37 +415,6 @@ table {
 .constants-box div { margin: 5px 0; font-size: 16px; }
 .constants-box strong { color: #00d4ff; }
 
-.action-container {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.full-btn { width: 100%; }
-
-.action-row {
-    display: flex;
-    gap: 4px;
-}
-
-.action-row button {
-    flex: 1;
-    padding: 4px;
-    font-size: 12px;
-}
-
-.action-btn{
-    background:#2d3748;
-    color:#fff;
-    border:1px solid #3d4e63;
-    border-radius:4px;
-    cursor:pointer;
-    padding:6px 10px;
-}
-
-.action-btn:hover{
-    background:#6e7b95;
-}
 
 /* ── HYDRAULIC TABLE ── */
 #designTable,
@@ -483,6 +452,36 @@ table {
     padding: 8px;
     background: white !important;
     color: black !important;
+}.action-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.full-btn { width: 100%; }
+
+.action-row {
+    display: flex;
+    gap: 4px;
+}
+
+.action-row button {
+    flex: 1;
+    padding: 4px;
+    font-size: 12px;
+}
+
+.action-btn{
+    background:#2d3748;
+    color:#fff;
+    border:1px solid #3d4e63;
+    border-radius:4px;
+    cursor:pointer;
+    padding:6px 10px;
+}
+
+.action-btn:hover{
+    background:#6e7b95;
 }
 
 .result-table th {

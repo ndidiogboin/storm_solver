@@ -265,6 +265,7 @@ function renderFilteredResults(){
                     </button>
 
                     <div class="action-row">
+                        <button onclick="insertCatchmentAbove(${index})">Insert</button>
                         <button onclick="editCatchment(${index})">Edit</button>
                         <button onclick="deleteCatchment(${index})">Delete</button>
                     </div>
@@ -448,6 +449,37 @@ function editCatchment(index){
             c.slope_local = parseFloat(newSlope) || 0;
 
             computeQ();
+
+        });
+
+    });
+
+}
+
+
+//==============INSERT CATCHMENT ABOVE=================
+function insertCatchmentAbove(index){
+
+    const payload = new URLSearchParams();
+    payload.append("index", index);
+
+    fetch("/insert_catchment_above", {
+        method: "POST",
+        headers: {"Content-Type": "application/x-www-form-urlencoded"},
+        body: payload.toString()
+    })
+    .then(res => res.json())
+    .then(result => {
+
+        // Refresh project data first
+        fetch("/compute_q")
+        .then(r => r.json())
+        .then(data => {
+
+            window.projectData = data;
+
+            // Open the normal editor for the newly inserted catchment
+            editCatchment(result.index);
 
         });
 
